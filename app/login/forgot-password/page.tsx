@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { AuthFooter, AuthMenu } from "../../components/auth-shell";
@@ -13,6 +13,14 @@ import Link from "next/link";
 type Step = 1 | 2 | 3 | 4;
 
 export default function ForgotPasswordPage() {
+  return (
+    <Suspense>
+      <ForgotPasswordContent />
+    </Suspense>
+  );
+}
+
+function ForgotPasswordContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
@@ -66,7 +74,7 @@ export default function ForgotPasswordPage() {
                     <ForgotStep key="step-1" onSuccess={() => setStep(2)} />
                   )}
                   {step === 2 && (
-                    <CheckEmailStep key="step-2" onContinue={() => setStep(3)} />
+                    <CheckEmailStep key="step-2" />
                   )}
                   {step === 3 && (
                     <ResetStep
@@ -148,7 +156,7 @@ function ForgotStep({ onSuccess }: { onSuccess: () => void }) {
 
 // ── Step 2: Check email ───────────────────────────────────────────────────────
 
-function CheckEmailStep({ onContinue }: { onContinue: () => void }) {
+function CheckEmailStep() {
   return (
     <motion.div
       className="flex flex-col items-center text-center"

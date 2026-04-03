@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { AuthFooter, AuthMenu } from "../components/auth-shell";
@@ -84,7 +84,9 @@ export default function LoginPage() {
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.18, ease: "easeInOut" }}
                     >
-                      <LoginForm onSwitchToSignup={() => setMode("signup")} cta={pageMeta.cta} />
+                      <Suspense>
+                        <LoginForm onSwitchToSignup={() => setMode("signup")} cta={pageMeta.cta} />
+                      </Suspense>
                     </motion.div>
                   ) : (
                     <motion.div
