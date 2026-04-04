@@ -10,11 +10,7 @@ export default function DashboardPage() {
 
       <main className="mx-auto mt-8 w-full sm:mt-12">
         <div className="mb-4 grid gap-4 sm:max-w-[420px]">
-          <UserSessionCard
-            name="Alex Thompson"
-            email="alex.thompson@example.com"
-            phone="+1 (555) 123-4567"
-          />
+          <UserSessionCard />
         </div>
         <section className="grid gap-4 lg:grid-cols-[92px_1fr]">
           {/* <aside className="rounded-xl border border-[#1e2b2c] bg-[rgba(8,19,18,0.62)] p-3">
