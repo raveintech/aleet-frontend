@@ -1,4 +1,5 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
+console.log("API Base URL, process.env.NEXT_PUBLIC_API_URL:", BASE_URL);
 
 export type ApiResponse<T = undefined> = {
   success: boolean;
