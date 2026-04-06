@@ -20,7 +20,7 @@ function useDayNight() {
 }
 
 export function DayNightProvider({ children }: { children: React.ReactNode }) {
-    const [mode, setMode] = useState<DayNightMode>("night");
+    const [mode, setMode] = useState<DayNightMode>("day");
     const toggle = () => setMode((m) => (m === "night" ? "day" : "night"));
 
     return (
