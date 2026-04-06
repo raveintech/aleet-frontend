@@ -10,7 +10,23 @@ export type User = {
   subscriptionStatus: string;
 };
 
-// ── Login ────────────────────────────────────────────────────────────────────
+// ── Check if user exists
+// POST /auth/check-user  { identifier }  →  { exists, type }
+
+export type CheckUserData = {
+  exists: boolean;
+  type: "email" | "phone";
+};
+
+export function checkUserExists(identifier: string) {
+  return apiFetch<CheckUserData>("/auth/check-user", {
+    method: "POST",
+    body: { identifier },
+  });
+}
+
+// ── Login
+// POST /auth/login  { identifier, password }  →  { token, user }
 
 export type LoginPayload = {
   identifier: string;
@@ -29,16 +45,15 @@ export function login(payload: LoginPayload) {
   });
 }
 
-// ── Signup — Step 1: Start (send OTP) ────────────────────────────────────────
+// ── Signup — Step 1: Start (send OTP)
+// POST /auth/signup/start  { identifier }  →  { identifierType, expiresIn }
 
 export type SignupStartPayload = {
-  phone: string;
-  email: string;
-  name: string;
+  identifier: string;
 };
 
 export type SignupStartData = {
-  phone: string;
+  identifierType: "email" | "phone";
   expiresIn: string;
 };
 
@@ -49,10 +64,11 @@ export function signupStart(payload: SignupStartPayload) {
   });
 }
 
-// ── Signup — Step 2: Verify OTP ───────────────────────────────────────────────
+// ── Signup — Step 2: Verify OTP
+// POST /auth/signup/verify  { identifier, code }  →  { signupToken }
 
 export type SignupVerifyPayload = {
-  phone: string;
+  identifier: string;
   code: string;
 };
 
@@ -67,11 +83,32 @@ export function signupVerify(payload: SignupVerifyPayload) {
   });
 }
 
-// ── Signup — Step 3: Complete ─────────────────────────────────────────────────
+// ── Signup — Step 3: Passcode
+// POST /auth/signup/passcode  { signupToken, password }  →  { tempToken }
 
-export type SignupCompletePayload = {
+export type SignupPasscodePayload = {
   signupToken: string;
   password: string;
+};
+
+export type SignupPasscodeData = {
+  tempToken: string;
+};
+
+export function signupPasscode(payload: SignupPasscodePayload) {
+  return apiFetch<SignupPasscodeData>("/auth/signup/passcode", {
+    method: "POST",
+    body: payload,
+  });
+}
+
+// ── Signup — Step 4: Complete
+// POST /auth/signup/complete  { tempToken, name, email }  →  { token, user }
+
+export type SignupCompletePayload = {
+  tempToken: string;
+  name: string;
+  email: string;
 };
 
 export type SignupCompleteData = {
@@ -86,7 +123,7 @@ export function signupComplete(payload: SignupCompletePayload) {
   });
 }
 
-// ── Forgot Password ───────────────────────────────────────────────────────────
+// ── Forgot Password
 
 export type ForgotPasswordPayload = {
   email: string;
@@ -100,7 +137,7 @@ export function forgotPassword(payload: ForgotPasswordPayload) {
   });
 }
 
-// ── Reset Password ────────────────────────────────────────────────────────────
+// ── Reset Password
 
 export type ResetPasswordPayload = {
   token: string;
