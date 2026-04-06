@@ -91,7 +91,7 @@ export function SiteMenu({ items = defaultItems, className }: SiteMenuProps) {
     <>
       <button
         className={cn(
-          "inline-flex h-[30px] w-[38px] cursor-pointer flex-col justify-center gap-[5px] border-0 bg-transparent",
+          "inline-flex h-7.5 w-9.5 cursor-pointer flex-col justify-center gap-1.25 border-0 bg-transparent",
           className,
         )}
         type="button"
@@ -105,9 +105,9 @@ export function SiteMenu({ items = defaultItems, className }: SiteMenuProps) {
           openMenu();
         }}
       >
-        <span className="h-[2px] w-[26px] rounded-[2px] bg-[#bca066]" />
-        <span className="h-[2px] w-[26px] rounded-[2px] bg-[#bca066]" />
-        <span className="h-[2px] w-[26px] rounded-[2px] bg-[#bca066]" />
+        <span className="h-0.5 w-6.5 rounded-xs bg-[#bca066]" />
+        <span className="h-0.5 w-6.5 rounded-xs bg-[#bca066]" />
+        <span className="h-0.5 w-6.5 rounded-xs bg-[#bca066]" />
       </button>
 
       {isMounted ? (
@@ -124,50 +124,53 @@ export function SiteMenu({ items = defaultItems, className }: SiteMenuProps) {
 
           <aside
             className={cn(
-              "relative z-10 flex h-full w-full max-w-[562px] flex-col bg-[rgba(0,0,0,0.77)] px-9 pt-[64px] pb-8 transition-transform duration-250 ease-out",
+              "relative z-10 flex h-full w-full max-w-120 flex-col bg-[rgba(5,10,9,0.92)] px-8 pt-10 pb-8 backdrop-blur-md transition-transform duration-250 ease-out",
               isVisible ? "translate-x-0" : "-translate-x-full",
             )}
           >
-            <div className="mb-[120px] flex items-center gap-5">
-              <button
-                type="button"
-                className="inline-flex h-[30px] w-[38px] cursor-pointer flex-col justify-center gap-[5px] border-0 bg-transparent"
-                aria-label="Close menu"
-                onClick={closeMenu}
-              >
-                <span className="h-[2px] w-[26px] rounded-[2px] bg-[#bca066]" />
-                <span className="h-[2px] w-[26px] rounded-[2px] bg-[#bca066]" />
-                <span className="h-[2px] w-[26px] rounded-[2px] bg-[#bca066]" />
-              </button>
-
-              <div className="inline-flex items-center gap-3.5 text-[#bca066]">
-                <span className="inline-flex h-[56px] w-[56px] items-center justify-center rounded-full border-[5px] border-[#bca066] font-serif text-[36px] leading-none font-semibold">
+            {/* Header row: logo + close button */}
+            <div className="mb-8 flex items-center justify-between sm:mb-10">
+              <div className="inline-flex items-center gap-3 text-[#bca066]">
+                <span className="inline-flex h-10.5 w-10.5 items-center justify-center rounded-full border-[3.5px] border-[#bca066] font-serif text-[26px] leading-none font-semibold">
                   A
                 </span>
-                <span className="text-[52px] leading-none font-semibold tracking-[-0.02em]">
+                <span className="text-[36px] leading-none font-semibold tracking-[-0.02em]">
                   Aleet
                 </span>
               </div>
+
+              <button
+                type="button"
+                className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/60 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
+                aria-label="Close menu"
+                onClick={closeMenu}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="h-4 w-4" aria-hidden>
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </button>
             </div>
 
-            <nav className="flex flex-col gap-10" aria-label="Main navigation">
+            <nav className="flex flex-col gap-1" aria-label="Main navigation">
               {items.map((item) => (
                 <Link
                   key={item.label}
                   href={item.href}
-                  className="group inline-flex items-center gap-6 text-[20px] leading-[1.1] font-semibold tracking-[-0.02em] text-white no-underline transition-colors duration-200 hover:text-[#bca066] sm:text-[18px]"
+                  className="group inline-flex items-center gap-4 rounded-xl px-3 py-3 text-[15px] font-medium leading-[1.2] tracking-[-0.01em] text-white/80 no-underline transition-all duration-200 hover:bg-white/5 hover:text-white sm:py-3.5 sm:text-[16px]"
                   onClick={closeMenu}
                 >
-                  <item.icon className="h-[42px] w-[42px] shrink-0 text-white/45 transition-colors duration-200 group-hover:text-[#bca066]" />
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/5 transition-colors duration-200 group-hover:bg-[#bca066]/15">
+                    <item.icon className="h-4.5 w-4.5 text-white/40 transition-colors duration-200 group-hover:text-[#bca066]" />
+                  </span>
                   {item.label}
                 </Link>
               ))}
             </nav>
 
-            <div className="mt-auto pt-10">
+            <div className="mt-auto pt-8">
               <button
                 type="button"
-                className="inline-flex h-[64px] w-full items-center justify-center rounded-[10px] border border-white bg-white px-6 text-[24px] font-semibold text-[#050d0c] transition-opacity duration-200 hover:opacity-90 sm:h-[60px] sm:text-[22px]"
+                className="inline-flex h-13 w-full items-center justify-center rounded-xl border border-white bg-white px-6 text-[16px] font-semibold text-[#050d0c] transition-opacity duration-200 hover:opacity-90"
                 onClick={closeMenu}
               >
                 Become a driver
