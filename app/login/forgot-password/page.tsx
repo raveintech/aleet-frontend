@@ -33,7 +33,7 @@ function ForgotPasswordContent() {
   }, [searchParams]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#050d0c] px-5 pt-6 pb-[18px] text-white sm:px-14 sm:pt-14 sm:pb-6">
+    <div className="flex min-h-screen flex-col bg-page-bg px-5 pt-6 pb-[18px] text-white sm:px-14 sm:pt-14 sm:pb-6">
       <AuthMenu />
 
       <div className="flex flex-1 items-center justify-center py-8">

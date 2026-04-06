@@ -5,7 +5,7 @@ import { UserSessionCard } from "../components/user-session-card";
 
 export default function DashboardPage() {
   return (
-    <div className="min-h-screen bg-[#050d0c] px-5 pt-6 pb-10 text-white sm:px-10 sm:pt-12">
+    <div className="min-h-screen bg-page-bg px-5 pt-6 pb-10 text-white sm:px-10 sm:pt-12">
       <AuthMenu />
 
       <main className="mx-auto mt-8 w-full sm:mt-12">
