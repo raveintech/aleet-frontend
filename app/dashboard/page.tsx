@@ -9,7 +9,7 @@ export default function DashboardPage() {
       <AuthMenu />
 
       <main className="mx-auto mt-8 w-full sm:mt-12">
-        <div className="mb-4 grid gap-4 sm:max-w-[420px]">
+        <div className="mb-4 grid gap-4 sm:max-w-105">
           <UserSessionCard />
         </div>
         <section className="grid gap-4 lg:grid-cols-[92px_1fr]">
@@ -94,7 +94,7 @@ function SideItem({
     <button
       type="button"
       className={cn(
-        "inline-flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 rounded-lg border border-transparent px-2 py-2 text-center transition-colors lg:h-[86px]",
+        "inline-flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 rounded-lg border border-transparent px-2 py-2 text-center transition-colors lg:h-21.5",
         active ? "text-[#bca066]" : "text-[#7f8687] hover:text-white",
       )}
     >

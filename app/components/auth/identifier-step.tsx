@@ -32,11 +32,11 @@ export function IdentifierStep({ isLoading, onSubmit }: Props) {
                 autoComplete="username"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
-                className="mb-5 h-[50px] border-[#1e2b2c] bg-[#090c0e] px-4 text-[15px] placeholder:text-[#5a5a5e] sm:h-[56px] sm:text-[17px]"
+                className="mb-5 h-12.5 border-[#1e2b2c] bg-[#090c0e] px-4 text-[15px] placeholder:text-[#5a5a5e] sm:h-14 sm:text-[17px]"
             />
 
             <Button
-                className="mb-4 h-[52px] text-[17px] sm:h-[58px] sm:text-[21px]"
+                className="mb-4 h-13 text-[17px] sm:h-14.5 sm:text-[21px]"
                 type="submit"
                 isLoading={isLoading}
             >

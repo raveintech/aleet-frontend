@@ -80,7 +80,7 @@ export function OtpStep({ identifier, isLoading, onSubmit, onBack }: Props) {
                         onKeyDown={(e) => onKeyDown(i, e)}
                         onPaste={onPaste}
                         className={cn(
-                            "h-[54px] w-full rounded-lg border border-[#1e2125] bg-[#090c0e] text-center text-[20px] font-semibold text-white outline-none transition-colors focus:border-[#3f4349] sm:h-[64px] sm:text-[24px]",
+                            "h-13.5 w-full rounded-lg border border-[#1e2125] bg-[#090c0e] text-center text-[20px] font-semibold text-white outline-none transition-colors focus:border-[#3f4349] sm:h-16 sm:text-[24px]",
                             digit && "border-[#414a4d]",
                         )}
                         aria-label={`Digit ${i + 1}`}
@@ -88,7 +88,7 @@ export function OtpStep({ identifier, isLoading, onSubmit, onBack }: Props) {
                 ))}
             </div>
             <Button
-                className="mb-4 h-[52px] text-[17px] sm:h-[58px] sm:text-[21px]"
+                className="mb-4 h-13 text-[17px] sm:h-14.5 sm:text-[21px]"
                 type="submit"
                 isLoading={isLoading}
                 disabled={!isComplete}

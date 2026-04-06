@@ -51,19 +51,19 @@ export function UserSessionCard() {
       <h3 className="text-[15px] font-semibold text-white">User data</h3>
       <dl className="mt-2 space-y-1.5 text-[13px]">
         <div className="flex items-start gap-2">
-          <dt className="min-w-[58px] text-[#7f8687]">Name:</dt>
+          <dt className="min-w-14.5 text-[#7f8687]">Name:</dt>
           <dd className="text-white">{user.name}</dd>
         </div>
         <div className="flex items-start gap-2">
-          <dt className="min-w-[58px] text-[#7f8687]">Email:</dt>
+          <dt className="min-w-14.5 text-[#7f8687]">Email:</dt>
           <dd className="break-all text-white">{user.email}</dd>
         </div>
         <div className="flex items-start gap-2">
-          <dt className="min-w-[58px] text-[#7f8687]">Phone:</dt>
+          <dt className="min-w-14.5 text-[#7f8687]">Phone:</dt>
           <dd className="text-white">{user.phone}</dd>
         </div>
         <div className="flex items-start gap-2">
-          <dt className="min-w-[58px] text-[#7f8687]">Role:</dt>
+          <dt className="min-w-14.5 text-[#7f8687]">Role:</dt>
           <dd className="text-white capitalize">{user.role}</dd>
         </div>
       </dl>
@@ -72,7 +72,7 @@ export function UserSessionCard() {
         type="button"
         variant="ghost"
         size="md"
-        className="mt-3 h-[38px] text-[12px]"
+        className="mt-3 h-9.5 text-[12px]"
         onClick={handleLogout}
       >
         Log out

@@ -33,13 +33,13 @@ function ForgotPasswordContent() {
   }, [searchParams]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-page-bg px-5 pt-6 pb-[18px] text-white sm:px-14 sm:pt-14 sm:pb-6">
+    <div className="flex min-h-screen flex-col bg-page-bg px-5 pt-6 pb-4.5 text-white sm:px-14 sm:pt-14 sm:pb-6">
       <AuthMenu />
 
       <div className="flex flex-1 items-center justify-center py-8">
         <main className="w-full">
-          <Container className="max-w-[560px]">
-            <section className="rounded-[24px] border border-[#1e2b2a] bg-[radial-gradient(110%_180%_at_50%_0%,rgba(8,27,25,0.95)_0%,rgba(4,12,11,0.95)_62%)] px-4 py-6 shadow-[0_14px_44px_rgba(0,0,0,0.35)] sm:px-8 sm:py-9">
+          <Container className="max-w-140">
+            <section className="rounded-3xl border border-[#1e2b2a] bg-[radial-gradient(110%_180%_at_50%_0%,rgba(8,27,25,0.95)_0%,rgba(4,12,11,0.95)_62%)] px-4 py-6 shadow-[0_14px_44px_rgba(0,0,0,0.35)] sm:px-8 sm:py-9">
               <header className="mb-7 text-center sm:mb-8">
                 <h1 className="mb-2 text-[30px] leading-[1.1] font-semibold text-white sm:text-[40px]">
                   {step === 1 && "Reset Password"}
@@ -61,7 +61,7 @@ function ForgotPasswordContent() {
                   <div
                     key={s}
                     className={cn(
-                      "h-[3px] flex-1 rounded-full transition-colors duration-300",
+                      "h-0.75 flex-1 rounded-full transition-colors duration-300",
                       step >= s ? "bg-[#bca066]" : "bg-[#1e2b2c]",
                     )}
                   />
@@ -135,10 +135,10 @@ function ForgotStep({ onSuccess }: { onSuccess: () => void }) {
         name="email"
         placeholder="your@email.com"
         required
-        className="mb-5 h-[50px] border-[#1e2b2c] bg-[#090c0e] px-4 text-[15px] placeholder:text-[#5a5a5e] sm:mb-6 sm:h-[56px] sm:text-[17px]"
+        className="mb-5 h-12.5 border-[#1e2b2c] bg-[#090c0e] px-4 text-[15px] placeholder:text-[#5a5a5e] sm:mb-6 sm:h-14 sm:text-[17px]"
       />
       <Button
-        className="mb-5 h-[52px] text-[17px] sm:mb-6 sm:h-[58px] sm:text-[21px]"
+        className="mb-5 h-13 text-[17px] sm:mb-6 sm:h-14.5 sm:text-[21px]"
         type="submit"
         isLoading={isLoading}
       >
@@ -249,7 +249,7 @@ function ResetStep({ token, onSuccess }: { token: string; onSuccess: () => void 
         placeholder="New password (min. 8 characters)"
         required
         minLength={8}
-        className="mb-4 h-[50px] border-[#1e2b2c] bg-[#090c0e] px-4 text-[15px] placeholder:text-[#5a5a5e] sm:h-[56px] sm:text-[17px]"
+        className="mb-4 h-12.5 border-[#1e2b2c] bg-[#090c0e] px-4 text-[15px] placeholder:text-[#5a5a5e] sm:h-14 sm:text-[17px]"
       />
       <Input
         id="reset-confirm-password"
@@ -258,10 +258,10 @@ function ResetStep({ token, onSuccess }: { token: string; onSuccess: () => void 
         placeholder="Confirm new password"
         required
         minLength={8}
-        className="mb-5 h-[50px] border-[#1e2b2c] bg-[#090c0e] px-4 text-[15px] placeholder:text-[#5a5a5e] sm:mb-6 sm:h-[56px] sm:text-[17px]"
+        className="mb-5 h-12.5 border-[#1e2b2c] bg-[#090c0e] px-4 text-[15px] placeholder:text-[#5a5a5e] sm:mb-6 sm:h-14 sm:text-[17px]"
       />
       <Button
-        className="mb-5 h-[52px] text-[17px] sm:mb-6 sm:h-[58px] sm:text-[21px]"
+        className="mb-5 h-13 text-[17px] sm:mb-6 sm:h-14.5 sm:text-[21px]"
         type="submit"
         isLoading={isLoading}
       >
@@ -305,7 +305,7 @@ function SuccessStep({ onLogin }: { onLogin: () => void }) {
         Your password has been successfully updated. You can now log in with your new password.
       </p>
       <Button
-        className="h-[52px] w-full text-[17px] sm:h-[58px] sm:text-[21px]"
+        className="h-13 w-full text-[17px] sm:h-14.5 sm:text-[21px]"
         type="button"
         onClick={onLogin}
       >
