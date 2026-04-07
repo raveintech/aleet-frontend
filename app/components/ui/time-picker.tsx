@@ -13,11 +13,13 @@ export function TimePicker({
     value,
     onChange,
     placeholder = "Select Time",
+    placement = "bottom",
 }: {
     label: string;
     value: string;
     onChange: (t: string) => void;
     placeholder?: string;
+    placement?: "top" | "bottom";
 }) {
     const [open, setOpen] = useState(false);
     const [hour, setHour] = useState("10");
@@ -30,8 +32,14 @@ export function TimePicker({
         setOpen(false);
     }
 
+    function handleClose() {
+        // Auto-confirm on close so value is never left empty after interaction
+        if (!value) onChange(`${hour}:${minute} ${period}`);
+        setOpen(false);
+    }
+
     return (
-        <Dropdown open={open} onClose={() => setOpen(false)}>
+        <Dropdown open={open} onClose={handleClose}>
             <div ref={triggerRef}>
                 <FieldTrigger
                     label={label}
@@ -43,7 +51,7 @@ export function TimePicker({
                 />
             </div>
             {open && (
-                <Popup anchorRef={triggerRef}>
+                <Popup anchorRef={triggerRef} placement={placement}>
                     <div className="p-3">
                         {/* Column headers */}
                         <div className="mb-2 grid grid-cols-3 text-center">

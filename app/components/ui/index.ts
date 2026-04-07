@@ -12,6 +12,8 @@ export { DatePicker } from "./date-picker";
 export { TimePicker } from "./time-picker";
 export { Select } from "./select";
 export type { SelectOption } from "./select";
+export { Toggle } from "./toggle";
+export { AddressAutocomplete } from "./address-autocomplete";
 export {
   CarIcon,
   MapPinIcon,

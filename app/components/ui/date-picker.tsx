@@ -12,12 +12,14 @@ export function DatePicker({
     onChange,
     minDate,
     placeholder = "Select Date",
+    placement = "bottom",
 }: {
     label: string;
     value: Date | undefined;
     onChange: (d: Date | undefined) => void;
     minDate?: Date;
     placeholder?: string;
+    placement?: "top" | "bottom";
 }) {
     const [open, setOpen] = useState(false);
     const triggerRef = useRef<HTMLDivElement>(null);
@@ -35,7 +37,7 @@ export function DatePicker({
                 />
             </div>
             {open && (
-                <Popup anchorRef={triggerRef}>
+                <Popup anchorRef={triggerRef} placement={placement}>
                     <DayPicker
                         mode="single"
                         selected={value}

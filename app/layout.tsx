@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Karla } from "next/font/google";
 import { Toaster } from "sonner";
+import { GoogleMapsProvider } from "./components/google-maps-provider";
 import "./globals.css";
 
 const karla = Karla({
@@ -24,7 +25,9 @@ export default function RootLayout({
       className={`${karla.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {children}
+        <GoogleMapsProvider>
+          {children}
+        </GoogleMapsProvider>
         <Toaster
           position="bottom-right"
           toastOptions={{

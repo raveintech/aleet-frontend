@@ -15,6 +15,7 @@ export function Select({
     options,
     value,
     onChange,
+    placement = "bottom",
 }: {
     label: string;
     placeholder: string;
@@ -22,6 +23,7 @@ export function Select({
     options: SelectOption[];
     value: string;
     onChange: (v: string) => void;
+    placement?: "top" | "bottom";
 }) {
     const [open, setOpen] = useState(false);
     const triggerRef = useRef<HTMLDivElement>(null);
@@ -39,7 +41,7 @@ export function Select({
                 />
             </div>
             {open && (
-                <Popup anchorRef={triggerRef}>
+                <Popup anchorRef={triggerRef} placement={placement}>
                     <div className="py-1.5">
                         {options.map((opt) => {
                             const display = opt.price ? `${opt.label} ${opt.price}` : opt.label;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 
@@ -20,7 +20,10 @@ export function Dropdown({
     useEffect(() => {
         if (!open) return;
         function handler(e: MouseEvent) {
-            if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+            if (ref.current && ref.current.contains(e.target as Node)) return;
+            // Не закриваємо якщо клік всередині portal popup
+            if ((e.target as HTMLElement).closest("[data-dropdown-popup]")) return;
+            onClose();
         }
         document.addEventListener("mousedown", handler);
         return () => document.removeEventListener("mousedown", handler);
@@ -80,40 +83,77 @@ export function FieldTrigger({
 export function Popup({
     anchorRef,
     children,
+    placement = "bottom",
 }: {
     anchorRef: React.RefObject<HTMLElement | null>;
     children: React.ReactNode;
+    placement?: "top" | "bottom";
 }) {
-    const [mounted, setMounted] = useState(false);
+    const popupRef = useRef<HTMLDivElement>(null);
     const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null);
+    const [visible, setVisible] = useState(false);
 
-    const measure = useCallback(() => {
-        if (!anchorRef.current) return;
-        const r = anchorRef.current.getBoundingClientRect();
+    useEffect(() => {
+        const anchor = anchorRef.current;
+        const popup = popupRef.current;
+        if (!anchor || !popup) return;
+
+        const r = anchor.getBoundingClientRect();
+        const popupHeight = popup.offsetHeight;
+
         setCoords({
-            top: r.bottom + window.scrollY + 8,
+            top: placement === "top"
+                ? r.top + window.scrollY - popupHeight - 8
+                : r.bottom + window.scrollY + 8,
             left: r.left + window.scrollX,
             width: r.width,
         });
-    }, [anchorRef]);
+
+        // два RAF — гарантовано після браузерного paint з правильними coords
+        let raf1: number;
+        let raf2: number;
+        raf1 = requestAnimationFrame(() => {
+            raf2 = requestAnimationFrame(() => setVisible(true));
+        });
+        return () => {
+            cancelAnimationFrame(raf1);
+            cancelAnimationFrame(raf2);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
-        setMounted(true);
-        measure();
-        window.addEventListener("scroll", measure, true);
-        window.addEventListener("resize", measure);
+        function remeasure() {
+            const anchor = anchorRef.current;
+            const popup = popupRef.current;
+            if (!anchor || !popup) return;
+            const r = anchor.getBoundingClientRect();
+            const popupHeight = popup.offsetHeight;
+            setCoords({
+                top: placement === "top"
+                    ? r.top + window.scrollY - popupHeight - 8
+                    : r.bottom + window.scrollY + 8,
+                left: r.left + window.scrollX,
+                width: r.width,
+            });
+        }
+        window.addEventListener("scroll", remeasure, true);
+        window.addEventListener("resize", remeasure);
         return () => {
-            window.removeEventListener("scroll", measure, true);
-            window.removeEventListener("resize", measure);
+            window.removeEventListener("scroll", remeasure, true);
+            window.removeEventListener("resize", remeasure);
         };
-    }, [measure]);
-
-    if (!mounted || !coords) return null;
+    }, [anchorRef, placement]);
 
     return createPortal(
         <div
-            style={{ top: coords.top, left: coords.left, minWidth: coords.width }}
-            className="fixed z-9999 overflow-hidden rounded-xl border border-[#2a3336] bg-[#111918] shadow-[0_16px_48px_rgba(0,0,0,0.6)] animate-in fade-in slide-in-from-top-2 duration-150"
+            ref={popupRef}
+            data-dropdown-popup=""
+            style={coords
+                ? { top: coords.top, left: coords.left, minWidth: coords.width }
+                : { top: -9999, left: -9999, minWidth: 0 }
+            }
+            className={`fixed z-9999 overflow-hidden rounded-xl border border-[#2a3336] bg-[#111918] shadow-[0_16px_48px_rgba(0,0,0,0.6)] transition-opacity duration-150 ${visible ? "opacity-100" : "opacity-0"}`}
         >
             {children}
         </div>,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { TOKEN_COOKIE } from "@/lib/auth";
 
-const PROTECTED_ROUTES = ["/dashboard"];
+const PROTECTED_ROUTES = ["/dashboard", "/bookings"];
 const AUTH_ROUTES = ["/login"];
 
 export function proxy(request: NextRequest) {
@@ -31,5 +31,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login"],
+  matcher: ["/dashboard/:path*", "/login", "/bookings/:path*"],
 };

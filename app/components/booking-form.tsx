@@ -1,27 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DatePicker, TimePicker, Select } from "./ui";
 import { CarIcon, MapPinIcon } from "./ui/icons";
+import { getVehicleTypes, type VehicleType } from "@/lib/api/vehicle-types";
+import { getRegions, type Region } from "@/lib/api/regions";
+import type { SelectOption } from "./ui/select";
 
-const VEHICLE_OPTIONS = [
-    { label: "Black Truck", price: "$150/hr" },
-    { label: "Sedan", price: "$137/hr" },
-    { label: "SUV", price: "$160/hr" },
-    { label: "Sprinter", price: "$200/hr" },
-];
-
-const STATE_OPTIONS = [
-    { label: "New York" },
-    { label: "Texas" },
-    { label: "Florida" },
-    { label: "Illinois" },
-    { label: "Pennsylvania" },
-    { label: "Ohio" },
-    { label: "Georgia" },
-    { label: "North Carolina" },
-    { label: "Michigan" },
-];
+const STATE_OPTIONS: SelectOption[] = [];
 
 export function BookingForm() {
     const [pickupDate, setPickupDate] = useState<Date | undefined>(undefined);
@@ -30,6 +16,32 @@ export function BookingForm() {
     const [dropoffTime, setDropoffTime] = useState("");
     const [vehicle, setVehicle] = useState("");
     const [state, setState] = useState("");
+
+    const [vehicleOptions, setVehicleOptions] = useState<SelectOption[]>([]);
+    const [regionOptions, setRegionOptions] = useState<SelectOption[]>([]);
+
+    useEffect(() => {
+        getVehicleTypes()
+            .then((res) => {
+                const options: SelectOption[] = (res.data ?? []).map((v: VehicleType) => ({
+                    label: v.name,
+                    price: `$${v.hourlyPrice}/hr`,
+                }));
+                setVehicleOptions(options);
+            })
+            .catch(() => { });
+    }, []);
+
+    useEffect(() => {
+        getRegions()
+            .then((res) => {
+                const options: SelectOption[] = (res.data ?? []).map((r: Region) => ({
+                    label: r.name,
+                }));
+                setRegionOptions(options);
+            })
+            .catch(() => { });
+    }, []);
 
     return (
         <section className="rounded-2xl border border-[#2a3336] bg-[rgba(12,18,17,0.82)] p-3 shadow-[0_14px_40px_rgba(0,0,0,0.4)] backdrop-blur-sm sm:p-5">
@@ -41,7 +53,7 @@ export function BookingForm() {
                     label="Vehicle Type"
                     placeholder="Select Vehicle"
                     icon={<CarIcon className="h-3.5 w-3.5" />}
-                    options={VEHICLE_OPTIONS}
+                    options={vehicleOptions}
                     value={vehicle}
                     onChange={setVehicle}
                 />
@@ -49,7 +61,7 @@ export function BookingForm() {
                     label="State"
                     placeholder="Select State"
                     icon={<MapPinIcon className="h-3.5 w-3.5" />}
-                    options={STATE_OPTIONS}
+                    options={regionOptions}
                     value={state}
                     onChange={setState}
                 />

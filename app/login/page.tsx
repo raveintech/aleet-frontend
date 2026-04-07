@@ -25,8 +25,6 @@ import {
   CompleteStep,
 } from "../components/auth";
 
-// ── Types ───────────────
-
 type Step =
   | "identifier"  // Step 1:  enter phone or email
   | "phone"       // Step 1b: email entered → ask for phone number
@@ -35,7 +33,6 @@ type Step =
   | "passcode"    // Step 3b: new user — set password
   | "complete";   // Step 4b: new user — name + email
 
-// ── Page ────────────────
 
 export default function LoginPage() {
   return (

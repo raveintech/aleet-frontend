@@ -2,6 +2,8 @@ import { cn } from "@/lib/utils";
 import { AuthMenu } from "../components/auth-shell";
 import { Button } from "../components/ui";
 import { UserSessionCard } from "../components/user-session-card";
+import { MyBookingsList } from "../components/dashboard/my-bookings-list";
+
 
 export default function DashboardPage() {
   return (
@@ -12,6 +14,13 @@ export default function DashboardPage() {
         <div className="mb-4 grid gap-4 sm:max-w-105">
           <UserSessionCard />
         </div>
+
+        {/* ─── My Bookings (temp) ─── */}
+        <section className="mb-8">
+          <h2 className="mb-4 text-[18px] font-semibold text-white">My Bookings</h2>
+          <MyBookingsList />
+        </section>
+
         <section className="grid gap-4 lg:grid-cols-[92px_1fr]">
           {/* <aside className="rounded-xl border border-[#1e2b2c] bg-[rgba(8,19,18,0.62)] p-3">
             <nav className="flex gap-3 lg:flex-col" aria-label="Dashboard navigation">
