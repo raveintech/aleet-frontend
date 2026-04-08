@@ -11,8 +11,6 @@ import { savePendingBooking } from "@/lib/pending-booking";
 import { getToken } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import {
-    minDropoffDate,
-    maxDropoffDate,
     isPickupTimeDisabled,
     isDropoffTimeDisabled,
     slotFromTimeStr,
@@ -41,13 +39,9 @@ export function BookingForm() {
     // Reset drop-off date when it falls outside the new pickup window
     const handlePickupDateChange = (d: Date | undefined) => {
         setPickupDate(d);
-        if (d && dropoffDate) {
-            const min = minDropoffDate(d);
-            const max = maxDropoffDate(d);
-            if (dropoffDate < min || dropoffDate > max) {
-                setDropoffDate(undefined);
-                setDropoffTime("");
-            }
+        if (d && dropoffDate && dropoffDate < d) {
+            setDropoffDate(undefined);
+            setDropoffTime("");
         }
     };
 
@@ -161,7 +155,6 @@ export function BookingForm() {
                     value={dropoffDate}
                     onChange={setDropoffDate}
                     minDate={pickupDate}
-                    maxDate={pickupDate ? maxDropoffDate(pickupDate) : undefined}
                 />
                 <TimePicker
                     label="Drop-off Time"

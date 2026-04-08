@@ -4,12 +4,8 @@
  * ─────
  * • Cannot book in the past
  * • endDate − startDate ≥ 3 h
- * • endDate − startDate ≤ 7 d
  * • endDate > startDate
  */
-
-/** Maximum booking span in calendar days (inclusive). */
-export const MAX_SPAN_DAYS = 7;
 
 /** Minimum booking duration in hours. */
 export const MIN_DURATION_HOURS = 3;
@@ -76,13 +72,11 @@ export function minDropoffDate(pickupDate: Date): Date {
 }
 
 /**
- * Latest allowed drop-off date given a pickup date (pickup + 7 days).
+ * Latest allowed drop-off date given a pickup date.
+ * No upper bound — returns `undefined`.
  */
-export function maxDropoffDate(pickupDate: Date): Date {
-  const d = new Date(pickupDate);
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + MAX_SPAN_DAYS);
-  return d;
+export function maxDropoffDate(_pickupDate: Date): Date | undefined {
+  return undefined;
 }
 
 // ── time-slot filtering ─────────────────────────────────────────────────────
@@ -156,6 +150,6 @@ export function isDropoffTimeDisabled(
 
   const diffHours = (dropoffMs - pickupMs) / 3_600_000;
 
-  // Must be > 0, ≥ 3h, and ≤ 7d (168h)
-  return diffHours < MIN_DURATION_HOURS || diffHours > MAX_SPAN_DAYS * 24;
+  // Must be ≥ 3h
+  return diffHours < MIN_DURATION_HOURS;
 }

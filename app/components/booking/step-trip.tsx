@@ -8,7 +8,6 @@ import { getVehicleTypes, type VehicleType } from "@/lib/api/vehicle-types";
 import { getRegions, type Region } from "@/lib/api/regions";
 import { Button } from "@/app/components/ui";
 import {
-    maxDropoffDate,
     isPickupTimeDisabled,
     isDropoffTimeDisabled,
     slotFromTimeStr,
@@ -66,12 +65,9 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
     // Reset drop-off when pickup date moves outside the valid window
     function handlePickupDateChange(d: Date | undefined) {
         const patch: Partial<BookingData> = { pickupDate: d };
-        if (d && data.dropoffDate) {
-            const max = maxDropoffDate(d);
-            if (data.dropoffDate < d || data.dropoffDate > max) {
-                patch.dropoffDate = undefined;
-                patch.dropoffTime = "";
-            }
+        if (d && data.dropoffDate && data.dropoffDate < d) {
+            patch.dropoffDate = undefined;
+            patch.dropoffTime = "";
         }
         onChange(patch);
     }
@@ -112,7 +108,7 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
         ? durationHours * data.vehicleHourlyRate * data.quantity
         : null;
 
-    const isDurationValid = durationHours !== null && durationHours >= 3 && durationHours <= 7 * 24;
+    const isDurationValid = durationHours !== null && durationHours >= 3;
 
     const isValid =
         !!data.pickupDate &&
@@ -175,7 +171,6 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
                             ...(!data.dropoffTime && data.pickupTime ? { dropoffTime: data.pickupTime } : {}),
                         })}
                         minDate={data.pickupDate}
-                        maxDate={data.pickupDate ? maxDropoffDate(data.pickupDate) : undefined}
                     />
                     <TimePicker
                         label="Drop-off Time"
@@ -196,7 +191,7 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
                                     {durationHours.toFixed(1)}h duration
                                     {!isDurationValid && (
                                         <span className="ml-1 text-red-400/60">
-                                            (min 3h, max 7d)
+                                            (min 3h)
                                         </span>
                                     )}
                                     {isDurationValid && estimatedCost !== null && (
