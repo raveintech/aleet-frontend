@@ -168,7 +168,7 @@ function AuthFlow() {
       });
       setToken(res.data!.token);
       toast.success(res.message);
-      router.push("/dashboard");
+      router.push(searchParams.get("next") ?? "/dashboard");
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Sign up failed.");
     } finally {

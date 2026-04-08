@@ -1,15 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { DatePicker, TimePicker, Select } from "./ui";
 import { CarIcon, MapPinIcon } from "./ui/icons";
 import { getVehicleTypes, type VehicleType } from "@/lib/api/vehicle-types";
 import { getRegions, type Region } from "@/lib/api/regions";
+import { savePendingBooking } from "@/lib/pending-booking";
+import { getToken } from "@/lib/auth";
+import { cn } from "@/lib/utils";
+import {
+    minDropoffDate,
+    maxDropoffDate,
+    isPickupTimeDisabled,
+    isDropoffTimeDisabled,
+    slotFromTimeStr,
+} from "@/lib/booking-constraints";
 import type { SelectOption } from "./ui/select";
 
 const STATE_OPTIONS: SelectOption[] = [];
 
+// Extended option to carry raw API data
+type VehicleOption = SelectOption & { _id: string; hourlyPrice: number };
+type RegionOption = SelectOption & { _id: string };
+
 export function BookingForm() {
+    const router = useRouter();
     const [pickupDate, setPickupDate] = useState<Date | undefined>(undefined);
     const [pickupTime, setPickupTime] = useState("");
     const [dropoffDate, setDropoffDate] = useState<Date | undefined>(undefined);
@@ -17,17 +34,43 @@ export function BookingForm() {
     const [vehicle, setVehicle] = useState("");
     const [state, setState] = useState("");
 
-    const [vehicleOptions, setVehicleOptions] = useState<SelectOption[]>([]);
-    const [regionOptions, setRegionOptions] = useState<SelectOption[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [vehicleList, setVehicleList] = useState<VehicleOption[]>([]);
+    const [regionList, setRegionList] = useState<RegionOption[]>([]);
+
+    // Reset drop-off date when it falls outside the new pickup window
+    const handlePickupDateChange = (d: Date | undefined) => {
+        setPickupDate(d);
+        if (d && dropoffDate) {
+            const min = minDropoffDate(d);
+            const max = maxDropoffDate(d);
+            if (dropoffDate < min || dropoffDate > max) {
+                setDropoffDate(undefined);
+                setDropoffTime("");
+            }
+        }
+    };
+
+    // Reset drop-off time when pickup time changes and combo becomes invalid
+    const handlePickupTimeChange = (t: string) => {
+        setPickupTime(t);
+        // If a full combo exists, verify it's still ≥ 3 h
+        if (pickupDate && dropoffDate && dropoffTime) {
+            const allDisabled = isDropoffTimeDisabled(pickupDate, t, dropoffDate, slotFromTimeStr(dropoffTime));
+            if (allDisabled) setDropoffTime("");
+        }
+    };
 
     useEffect(() => {
         getVehicleTypes()
             .then((res) => {
-                const options: SelectOption[] = (res.data ?? []).map((v: VehicleType) => ({
+                const opts: VehicleOption[] = (res.data ?? []).map((v: VehicleType) => ({
                     label: v.name,
                     price: `$${v.hourlyPrice}/hr`,
+                    _id: v._id,
+                    hourlyPrice: v.hourlyPrice,
                 }));
-                setVehicleOptions(options);
+                setVehicleList(opts);
             })
             .catch(() => { });
     }, []);
@@ -35,20 +78,64 @@ export function BookingForm() {
     useEffect(() => {
         getRegions()
             .then((res) => {
-                const options: SelectOption[] = (res.data ?? []).map((r: Region) => ({
+                const opts: RegionOption[] = (res.data ?? []).map((r: Region) => ({
                     label: r.name,
+                    _id: r._id,
                 }));
-                setRegionOptions(options);
+                setRegionList(opts);
             })
             .catch(() => { });
     }, []);
+
+    const handleQuickBooking = useCallback(async () => {
+        if (isLoading) return;
+        setIsLoading(true);
+
+        const token = getToken();
+
+        // Find selected vehicle/region objects
+        const selectedVehicle = vehicleList.find((v) => v.label === vehicle);
+        const selectedRegion = regionList.find((r) => r.label === state);
+
+        // Save whatever the user has filled (can be partial)
+        savePendingBooking({
+            pickupDate: pickupDate ? pickupDate.toISOString() : null,
+            dropoffDate: dropoffDate ? dropoffDate.toISOString() : null,
+            pickupTime,
+            dropoffTime,
+            vehicleType: selectedVehicle?.label ?? vehicle,
+            vehicleTypeId: selectedVehicle?._id ?? "",
+            vehicleHourlyRate: selectedVehicle?.hourlyPrice ?? 0,
+            region: selectedRegion?.label ?? state,
+            regionId: selectedRegion?._id ?? "",
+        });
+
+        // Artificial 1-second delay for better UX feedback
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        if (token) {
+            // Already logged in — go straight to booking
+            router.push("/booking");
+        } else {
+            // Not logged in — redirect to login, then to booking
+            router.push("/login?next=/booking");
+        }
+    }, [isLoading, vehicleList, regionList, vehicle, state, pickupDate, dropoffDate, pickupTime, dropoffTime, router]);
+
+    const vehicleOptions: SelectOption[] = vehicleList;
+    const regionOptions: SelectOption[] = regionList;
 
     return (
         <section className="rounded-2xl border border-[#2a3336] bg-[rgba(12,18,17,0.82)] p-3 shadow-[0_14px_40px_rgba(0,0,0,0.4)] backdrop-blur-sm sm:p-5">
             {/* Row 1: Pick Up + Vehicle */}
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-                <DatePicker label="Pick Up Date" value={pickupDate} onChange={setPickupDate} />
-                <TimePicker label="Pick Up Time" value={pickupTime} onChange={setPickupTime} />
+                <DatePicker label="Pick Up Date" value={pickupDate} onChange={handlePickupDateChange} />
+                <TimePicker
+                    label="Pick Up Time"
+                    value={pickupTime}
+                    onChange={handlePickupTimeChange}
+                    disableSlot={(slot) => isPickupTimeDisabled(pickupDate, slot)}
+                />
                 <Select
                     label="Vehicle Type"
                     placeholder="Select Vehicle"
@@ -69,12 +156,33 @@ export function BookingForm() {
 
             {/* Row 2: Drop-off + CTA */}
             <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-6 sm:grid-cols-4 sm:gap-3">
-                <DatePicker label="Drop-off Date" value={dropoffDate} onChange={setDropoffDate} minDate={pickupDate} />
-                <TimePicker label="Drop-off Time" value={dropoffTime} onChange={setDropoffTime} />
+                <DatePicker
+                    label="Drop-off Date"
+                    value={dropoffDate}
+                    onChange={setDropoffDate}
+                    minDate={pickupDate}
+                    maxDate={pickupDate ? maxDropoffDate(pickupDate) : undefined}
+                />
+                <TimePicker
+                    label="Drop-off Time"
+                    value={dropoffTime}
+                    onChange={setDropoffTime}
+                    disableSlot={(slot) =>
+                        isDropoffTimeDisabled(pickupDate, pickupTime, dropoffDate, slot)
+                    }
+                />
                 <button
                     type="button"
-                    className="col-span-2 mt-1 cursor-pointer inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#4a171a] px-4 text-[14px] font-medium text-white transition-colors hover:bg-[#5a1e22] sm:col-span-2 sm:mt-6 sm:h-12 sm:text-[15px]"
+                    disabled={isLoading || undefined}
+                    onClick={handleQuickBooking}
+                    className={cn(
+                        "col-span-2 mt-1 cursor-pointer inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#4a171a] px-4 text-[14px] font-medium text-white transition-colors hover:bg-[#5a1e22] sm:col-span-2 sm:mt-6 sm:h-12 sm:text-[15px]",
+                        isLoading && "cursor-not-allowed opacity-60",
+                    )}
                 >
+                    {isLoading && (
+                        <Loader2 className="mr-2 h-[1em] w-[1em] animate-spin" />
+                    )}
                     Quick Booking (3+ Hrs)
                 </button>
             </div>

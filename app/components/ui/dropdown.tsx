@@ -103,9 +103,9 @@ export function Popup({
 
         setCoords({
             top: placement === "top"
-                ? r.top + window.scrollY - popupHeight - 8
-                : r.bottom + window.scrollY + 8,
-            left: r.left + window.scrollX,
+                ? r.top - popupHeight - 8
+                : r.bottom + 8,
+            left: r.left,
             width: r.width,
         });
 
@@ -131,9 +131,9 @@ export function Popup({
             const popupHeight = popup.offsetHeight;
             setCoords({
                 top: placement === "top"
-                    ? r.top + window.scrollY - popupHeight - 8
-                    : r.bottom + window.scrollY + 8,
-                left: r.left + window.scrollX,
+                    ? r.top - popupHeight - 8
+                    : r.bottom + 8,
+                left: r.left,
                 width: r.width,
             });
         }

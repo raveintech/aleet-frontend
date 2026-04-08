@@ -11,6 +11,7 @@ export function DatePicker({
     value,
     onChange,
     minDate,
+    maxDate,
     placeholder = "Select Date",
     placement = "bottom",
 }: {
@@ -18,6 +19,7 @@ export function DatePicker({
     value: Date | undefined;
     onChange: (d: Date | undefined) => void;
     minDate?: Date;
+    maxDate?: Date;
     placeholder?: string;
     placement?: "top" | "bottom";
 }) {
@@ -45,7 +47,10 @@ export function DatePicker({
                             onChange(d);
                             setOpen(false);
                         }}
-                        disabled={{ before: minDate ?? (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })() }}
+                        disabled={[
+                            { before: minDate ?? (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })() },
+                            ...(maxDate ? [{ after: maxDate }] : []),
+                        ]}
                         classNames={{
                             root: "p-4 select-none w-[280px]",
                             month_caption: "relative flex items-center justify-center mb-2 h-8",

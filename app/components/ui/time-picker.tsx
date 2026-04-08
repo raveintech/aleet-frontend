@@ -14,12 +14,15 @@ export function TimePicker({
     onChange,
     placeholder = "Select Time",
     placement = "bottom",
+    disableSlot,
 }: {
     label: string;
     value: string;
     onChange: (t: string) => void;
     placeholder?: string;
     placement?: "top" | "bottom";
+    /** Return `true` to grey-out a specific hour/minute/period combination. */
+    disableSlot?: (slot: { hour: string; minute: string; period: string }) => boolean;
 }) {
     const [open, setOpen] = useState(false);
     const [hour, setHour] = useState("10");
@@ -28,15 +31,18 @@ export function TimePicker({
     const triggerRef = useRef<HTMLDivElement>(null);
 
     function confirm() {
+        if (isCurrentSlotDisabled) return;
         onChange(`${hour}:${minute} ${period}`);
         setOpen(false);
     }
 
     function handleClose() {
         // Auto-confirm on close so value is never left empty after interaction
-        if (!value) onChange(`${hour}:${minute} ${period}`);
+        if (!value && !isCurrentSlotDisabled) onChange(`${hour}:${minute} ${period}`);
         setOpen(false);
     }
+
+    const isCurrentSlotDisabled = disableSlot?.({ hour, minute, period }) ?? false;
 
     return (
         <Dropdown open={open} onClose={handleClose}>
@@ -117,10 +123,17 @@ export function TimePicker({
 
                         <div className="mt-3 h-px bg-[#1e2a2c]" />
 
+                        {isCurrentSlotDisabled && (
+                            <p className="mt-2 text-center text-[11px] text-red-400/70">
+                                This time is not available
+                            </p>
+                        )}
+
                         <button
                             type="button"
+                            disabled={isCurrentSlotDisabled}
                             onClick={confirm}
-                            className="mt-3 w-full rounded-lg bg-[#bca066] py-2.5 text-[13px] font-semibold text-[#0d0e0b] transition-colors hover:bg-[#cdb077] active:scale-[0.98]"
+                            className={`${isCurrentSlotDisabled ? "mt-1.5" : "mt-3"} w-full rounded-lg bg-[#bca066] py-2.5 text-[13px] font-semibold text-[#0d0e0b] transition-colors hover:bg-[#cdb077] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed`}
                         >
                             Confirm {hour}:{minute} {period}
                         </button>

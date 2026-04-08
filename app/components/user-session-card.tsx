@@ -29,7 +29,7 @@ export function UserSessionCard() {
 
   const handleLogout = () => {
     removeToken();
-    router.push("/login");
+    router.push("/");
   };
 
   if (isLoading) {

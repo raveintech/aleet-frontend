@@ -7,6 +7,12 @@ import type { SelectOption } from "@/app/components/ui/select";
 import { getVehicleTypes, type VehicleType } from "@/lib/api/vehicle-types";
 import { getRegions, type Region } from "@/lib/api/regions";
 import { Button } from "@/app/components/ui";
+import {
+    maxDropoffDate,
+    isPickupTimeDisabled,
+    isDropoffTimeDisabled,
+    slotFromTimeStr,
+} from "@/lib/booking-constraints";
 import type { BookingData } from "./booking-types";
 
 type Props = {
@@ -57,6 +63,29 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
         });
     }
 
+    // Reset drop-off when pickup date moves outside the valid window
+    function handlePickupDateChange(d: Date | undefined) {
+        const patch: Partial<BookingData> = { pickupDate: d };
+        if (d && data.dropoffDate) {
+            const max = maxDropoffDate(d);
+            if (data.dropoffDate < d || data.dropoffDate > max) {
+                patch.dropoffDate = undefined;
+                patch.dropoffTime = "";
+            }
+        }
+        onChange(patch);
+    }
+
+    // Reset drop-off time when pickup time invalidates the combo
+    function handlePickupTimeChange(t: string) {
+        const patch: Partial<BookingData> = { pickupTime: t };
+        if (data.pickupDate && data.dropoffDate && data.dropoffTime) {
+            const invalid = isDropoffTimeDisabled(data.pickupDate, t, data.dropoffDate, slotFromTimeStr(data.dropoffTime));
+            if (invalid) patch.dropoffTime = "";
+        }
+        onChange(patch);
+    }
+
     const durationHours = data.pickupDate && data.dropoffDate && data.pickupTime && data.dropoffTime
         ? (() => {
             const parseTime = (t: string) => {
@@ -83,6 +112,8 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
         ? durationHours * data.vehicleHourlyRate * data.quantity
         : null;
 
+    const isDurationValid = durationHours !== null && durationHours >= 3 && durationHours <= 7 * 24;
+
     const isValid =
         !!data.pickupDate &&
         !!data.pickupTime &&
@@ -90,7 +121,8 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
         !!data.dropoffTime &&
         !!data.vehicleType &&
         !!data.region &&
-        !!data.pickupAddress.text;
+        !!data.pickupAddress.text &&
+        isDurationValid;
 
     return (
         <div>
@@ -107,8 +139,13 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
 
                 {/* Row 1 */}
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <DatePicker label="Pick Up Date" value={data.pickupDate} onChange={(d) => onChange({ pickupDate: d })} />
-                    <TimePicker label="Pick Up Time" value={data.pickupTime} onChange={(t) => onChange({ pickupTime: t })} />
+                    <DatePicker label="Pick Up Date" value={data.pickupDate} onChange={handlePickupDateChange} />
+                    <TimePicker
+                        label="Pick Up Time"
+                        value={data.pickupTime}
+                        onChange={handlePickupTimeChange}
+                        disableSlot={(slot) => isPickupTimeDisabled(data.pickupDate, slot)}
+                    />
                     <Select
                         label="Vehicle Type"
                         placeholder="Select Vehicle"
@@ -138,22 +175,31 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
                             ...(!data.dropoffTime && data.pickupTime ? { dropoffTime: data.pickupTime } : {}),
                         })}
                         minDate={data.pickupDate}
+                        maxDate={data.pickupDate ? maxDropoffDate(data.pickupDate) : undefined}
                     />
                     <TimePicker
                         label="Drop-off Time"
                         value={data.dropoffTime}
                         onChange={(t) => onChange({ dropoffTime: t })}
+                        disableSlot={(slot) =>
+                            isDropoffTimeDisabled(data.pickupDate, data.pickupTime, data.dropoffDate, slot)
+                        }
                     />
                     {/* Duration + cost indicator */}
                     <div className="col-span-2 flex items-end">
-                        <div className="flex h-11 w-full items-center gap-2 rounded-lg border border-[#1e2a2c] bg-[#111918]/60 px-3 sm:h-12">
+                        <div className={`flex h-11 w-full items-center gap-2 rounded-lg border px-3 sm:h-12 ${durationHours !== null && !isDurationValid ? "border-red-500/40 bg-red-950/20" : "border-[#1e2a2c] bg-[#111918]/60"}`}>
                             <span className="text-[#bca066]/60">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>
                             </span>
                             {durationHours !== null ? (
-                                <span className="text-[13px] text-white/60">
+                                <span className={`text-[13px] ${isDurationValid ? "text-white/60" : "text-red-400/80"}`}>
                                     {durationHours.toFixed(1)}h duration
-                                    {estimatedCost !== null && (
+                                    {!isDurationValid && (
+                                        <span className="ml-1 text-red-400/60">
+                                            (min 3h, max 7d)
+                                        </span>
+                                    )}
+                                    {isDurationValid && estimatedCost !== null && (
                                         <span className="ml-2 text-[#bca066]">
                                             · ${estimatedCost.toFixed(0)} est. total
                                         </span>

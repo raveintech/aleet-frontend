@@ -12,6 +12,7 @@ import { PriceBar } from "./price-bar";
 import { getToken } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
 import { toast } from "@/app/components/ui";
+import { loadPendingBooking, clearPendingBooking } from "@/lib/pending-booking";
 
 type Step = 1 | 2 | 3;
 
@@ -78,7 +79,25 @@ export function BookingStepIndicator({ step }: { step: Step }) {
 
 export function BookingWizard({ onStepChange }: { onStepChange?: (s: number) => void }) {
     const [step, setStep] = useState<Step>(1);
-    const [data, setData] = useState<BookingData>(EMPTY_BOOKING);
+    const [data, setData] = useState<BookingData>(() => {
+        // Hydrate from pendingBooking saved on homepage
+        if (typeof window === "undefined") return EMPTY_BOOKING;
+        const pending = loadPendingBooking();
+        if (!pending) return EMPTY_BOOKING;
+        clearPendingBooking();
+        return {
+            ...EMPTY_BOOKING,
+            pickupDate: pending.pickupDate ? new Date(pending.pickupDate) : undefined,
+            dropoffDate: pending.dropoffDate ? new Date(pending.dropoffDate) : undefined,
+            pickupTime: pending.pickupTime,
+            dropoffTime: pending.dropoffTime,
+            vehicleType: pending.vehicleType,
+            vehicleTypeId: pending.vehicleTypeId,
+            vehicleHourlyRate: pending.vehicleHourlyRate,
+            region: pending.region,
+            regionId: pending.regionId,
+        };
+    });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [serverPrice, setServerPrice] = useState<BookingPriceResult | null>(null);
