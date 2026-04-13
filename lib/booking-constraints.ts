@@ -122,7 +122,8 @@ export function isDropoffTimeDisabled(
   dropoffDate: Date | undefined,
   slot: TimeSlot,
 ): boolean {
-  if (!pickupDate || !pickupTime || !dropoffDate) return false;
+  // If drop-off date is not yet chosen, block all slots so the user picks a date first
+  if (!pickupDate || !pickupTime || !dropoffDate) return true;
 
   const pickupParsed = parseTime(pickupTime);
   if (!pickupParsed) return false;

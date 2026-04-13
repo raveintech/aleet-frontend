@@ -84,31 +84,42 @@ export function Popup({
     anchorRef,
     children,
     placement = "bottom",
+    matchWidth = true,
 }: {
     anchorRef: React.RefObject<HTMLElement | null>;
     children: React.ReactNode;
     placement?: "top" | "bottom";
+    /** If true (default), popup width matches the anchor. If false, popup can be wider (min-width = anchor). */
+    matchWidth?: boolean;
 }) {
     const popupRef = useRef<HTMLDivElement>(null);
-    const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null);
+    const [coords, setCoords] = useState<{ top: number; left: number; width: number; minWidth: number } | null>(null);
     const [visible, setVisible] = useState(false);
 
-    useEffect(() => {
+    function measure() {
         const anchor = anchorRef.current;
         const popup = popupRef.current;
         if (!anchor || !popup) return;
 
         const r = anchor.getBoundingClientRect();
         const popupHeight = popup.offsetHeight;
+        const popupWidth = matchWidth ? r.width : popup.scrollWidth;
+        // Clamp left so the popup doesn't overflow the right edge of the viewport
+        const maxLeft = window.innerWidth - popupWidth - 8;
+        const left = Math.min(r.left, maxLeft);
 
         setCoords({
             top: placement === "top"
                 ? r.top - popupHeight - 8
                 : r.bottom + 8,
-            left: r.left,
-            width: r.width,
+            left: Math.max(8, left),
+            width: matchWidth ? r.width : popupWidth,
+            minWidth: r.width,
         });
+    }
 
+    useEffect(() => {
+        measure();
         // два RAF — гарантовано після браузерного paint з правильними coords
         let raf1: number;
         let raf2: number;
@@ -123,35 +134,21 @@ export function Popup({
     }, []);
 
     useEffect(() => {
-        function remeasure() {
-            const anchor = anchorRef.current;
-            const popup = popupRef.current;
-            if (!anchor || !popup) return;
-            const r = anchor.getBoundingClientRect();
-            const popupHeight = popup.offsetHeight;
-            setCoords({
-                top: placement === "top"
-                    ? r.top - popupHeight - 8
-                    : r.bottom + 8,
-                left: r.left,
-                width: r.width,
-            });
-        }
-        window.addEventListener("scroll", remeasure, true);
-        window.addEventListener("resize", remeasure);
+        window.addEventListener("scroll", measure, true);
+        window.addEventListener("resize", measure);
         return () => {
-            window.removeEventListener("scroll", remeasure, true);
-            window.removeEventListener("resize", remeasure);
+            window.removeEventListener("scroll", measure, true);
+            window.removeEventListener("resize", measure);
         };
-    }, [anchorRef, placement]);
+    }, [anchorRef, placement, matchWidth]);
 
     return createPortal(
         <div
             ref={popupRef}
             data-dropdown-popup=""
             style={coords
-                ? { top: coords.top, left: coords.left, width: coords.width }
-                : { top: -9999, left: -9999, width: 0 }
+                ? { top: coords.top, left: coords.left, width: coords.width, minWidth: coords.minWidth }
+                : { top: -9999, left: -9999, width: 0, minWidth: 0 }
             }
             className={`fixed z-9999 overflow-hidden rounded-xl border border-[#2a3336] bg-[#111918] shadow-[0_16px_48px_rgba(0,0,0,0.6)] transition-opacity duration-150 ${visible ? "opacity-100" : "opacity-0"}`}
         >

@@ -20,6 +20,7 @@ export function TimePicker({
     placeholder = "Select Time",
     placement = "bottom",
     disableSlot,
+    disabledMessage = "This time is not available",
 }: {
     label: string;
     value: string;
@@ -28,6 +29,8 @@ export function TimePicker({
     placement?: "top" | "bottom";
     /** Return `true` to disable a specific hour/minute/period combination. */
     disableSlot?: (slot: { hour: string; minute: string; period: string }) => boolean;
+    /** Message shown when the selected slot is disabled. */
+    disabledMessage?: string;
 }) {
     const [open, setOpen] = useState(false);
     const [hour, setHour] = useState("12");
@@ -92,7 +95,7 @@ export function TimePicker({
 
                         {isCurrentSlotDisabled && (
                             <p className="mt-2 text-center text-[11px] text-red-400/70">
-                                This time is not available
+                                {disabledMessage}
                             </p>
                         )}
 

@@ -82,6 +82,21 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
         onChange(patch);
     }
 
+    // Re-validate drop-off time when drop-off date changes
+    function handleDropoffDateChange(d: Date | undefined) {
+        const patch: Partial<BookingData> = { dropoffDate: d };
+        // Pre-fill drop-off time with pickup time if not yet set
+        if (!data.dropoffTime && data.pickupTime) {
+            patch.dropoffTime = data.pickupTime;
+        }
+        // If a drop-off time is already selected, re-validate it against the new date
+        if (d && data.pickupDate && data.pickupTime && data.dropoffTime) {
+            const invalid = isDropoffTimeDisabled(data.pickupDate, data.pickupTime, d, slotFromTimeStr(data.dropoffTime));
+            if (invalid) patch.dropoffTime = "";
+        }
+        onChange(patch);
+    }
+
     const durationHours = data.pickupDate && data.dropoffDate && data.pickupTime && data.dropoffTime
         ? (() => {
             const parseTime = (t: string) => {
@@ -165,11 +180,7 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
                     <DatePicker
                         label="Drop-off Date"
                         value={data.dropoffDate}
-                        onChange={(d) => onChange({
-                            dropoffDate: d,
-                            // Pre-fill dropoff time with pickup time if not yet set
-                            ...(!data.dropoffTime && data.pickupTime ? { dropoffTime: data.pickupTime } : {}),
-                        })}
+                        onChange={handleDropoffDateChange}
                         minDate={data.pickupDate}
                     />
                     <TimePicker
@@ -179,6 +190,7 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
                         disableSlot={(slot) =>
                             isDropoffTimeDisabled(data.pickupDate, data.pickupTime, data.dropoffDate, slot)
                         }
+                        disabledMessage={!data.dropoffDate ? "Select a drop-off date first" : "Min. 3h after pick-up time"}
                     />
                     {/* Duration + cost indicator */}
                     <div className="col-span-2 flex items-end">

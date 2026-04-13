@@ -51,8 +51,17 @@ export function BookingForm() {
         setPickupTime(t);
         // If a full combo exists, verify it's still ≥ 3 h
         if (pickupDate && dropoffDate && dropoffTime) {
-            const allDisabled = isDropoffTimeDisabled(pickupDate, t, dropoffDate, slotFromTimeStr(dropoffTime));
-            if (allDisabled) setDropoffTime("");
+            const invalid = isDropoffTimeDisabled(pickupDate, t, dropoffDate, slotFromTimeStr(dropoffTime));
+            if (invalid) setDropoffTime("");
+        }
+    };
+
+    const handleDropoffDateChange = (d: Date | undefined) => {
+        setDropoffDate(d);
+        // Re-validate the already-selected drop-off time against the new date
+        if (d && pickupDate && pickupTime && dropoffTime) {
+            const invalid = isDropoffTimeDisabled(pickupDate, pickupTime, d, slotFromTimeStr(dropoffTime));
+            if (invalid) setDropoffTime("");
         }
     };
 
@@ -160,7 +169,7 @@ export function BookingForm() {
                 <DatePicker
                     label="Drop-off Date"
                     value={dropoffDate}
-                    onChange={setDropoffDate}
+                    onChange={handleDropoffDateChange}
                     minDate={pickupDate}
                 />
                 <TimePicker
@@ -170,6 +179,7 @@ export function BookingForm() {
                     disableSlot={(slot) =>
                         isDropoffTimeDisabled(pickupDate, pickupTime, dropoffDate, slot)
                     }
+                    disabledMessage={!dropoffDate ? "Select a drop-off date first" : "Min. 3h after pick-up time"}
                 />
                 <button
                     type="button"

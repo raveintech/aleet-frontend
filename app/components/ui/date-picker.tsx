@@ -39,7 +39,7 @@ export function DatePicker({
                 />
             </div>
             {open && (
-                <Popup anchorRef={triggerRef} placement={placement}>
+                <Popup anchorRef={triggerRef} placement={placement} matchWidth={false}>
                     <DayPicker
                         mode="single"
                         selected={value}
