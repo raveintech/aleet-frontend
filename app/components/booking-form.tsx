@@ -108,7 +108,11 @@ export function BookingForm() {
         const token = getToken();
 
         // Find selected vehicle/region objects
-        const selectedVehicle = vehicleList.find((v) => v.label === vehicle);
+        // Select stores value as `${label} ${price}` (e.g. "SUV $160/hr"), so match against that
+        const selectedVehicle = vehicleList.find((v) => {
+            const display = v.price ? `${v.label} ${v.price}` : v.label;
+            return display === vehicle;
+        });
         const selectedRegion = regionList.find((r) => r.label === state);
 
         // Save whatever the user has filled (can be partial)

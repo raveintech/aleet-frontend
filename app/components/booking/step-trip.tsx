@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DatePicker, TimePicker, Select, AddressAutocomplete } from "@/app/components/ui";
+import { DatePicker, TimePicker, Select } from "@/app/components/ui";
 import { CarIcon, MapPinIcon } from "@/app/components/ui/icons";
 import type { SelectOption } from "@/app/components/ui/select";
 import { getVehicleTypes, type VehicleType } from "@/lib/api/vehicle-types";
@@ -132,7 +132,6 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
         !!data.dropoffTime &&
         !!data.vehicleType &&
         !!data.region &&
-        !!data.pickupAddress.text &&
         isDurationValid;
 
     return (
@@ -216,47 +215,6 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
                                 <span className="text-[13px] text-white/25">Select dates to see duration</span>
                             )}
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* ── Pickup Address & Fleet Size ── */}
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
-                {/* Pickup address */}
-                <div className="rounded-2xl border border-[#1e2a2c] bg-[#0c1211] p-4 sm:p-6">
-                    <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-[#3a5060]">Pickup Address</p>
-                    <AddressAutocomplete
-                        value={data.pickupAddress.text}
-                        onChange={(v) => onChange({ pickupAddress: { ...data.pickupAddress, text: v } })}
-                        onPlaceChange={(place) => onChange({ pickupAddress: place })}
-                        placeholder="123 Main St, New York, NY"
-                    />
-                </div>
-
-                {/* Fleet size */}
-                <div className="rounded-2xl border border-[#1e2a2c] bg-[#0c1211] p-4 sm:p-6">
-                    <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-[#3a5060]">Fleet Size</p>
-                    <div className="flex h-11 items-center gap-3 sm:h-12">
-                        <button
-                            type="button"
-                            onClick={() => onChange({ quantity: Math.max(1, data.quantity - 1) })}
-                            disabled={data.quantity <= 1}
-                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#2e3638] bg-[#1e2527] text-white/60 transition-colors hover:border-[#bca066]/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
-                        >
-                            <span className="text-lg font-light leading-none">−</span>
-                        </button>
-                        <div className="flex min-w-16 flex-col items-center">
-                            <span className="text-[22px] font-semibold leading-none text-white tabular-nums">{data.quantity}</span>
-                            <span className="mt-0.5 text-[10px] text-[#5a7060]">vehicle{data.quantity > 1 ? "s" : ""}</span>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => onChange({ quantity: Math.min(10, data.quantity + 1) })}
-                            disabled={data.quantity >= 10}
-                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#2e3638] bg-[#1e2527] text-white/60 transition-colors hover:border-[#bca066]/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
-                        >
-                            <span className="text-lg font-light leading-none">+</span>
-                        </button>
                     </div>
                 </div>
             </div>

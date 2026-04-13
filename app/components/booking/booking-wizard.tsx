@@ -1,7 +1,9 @@
 "use client";
 
-import { Fragment, useState, useEffect, useRef } from "react";
+import { Fragment, useState, useEffect, useLayoutEffect, useRef } from "react";
 import Link from "next/link";
+import { Pencil } from "lucide-react";
+import { format } from "date-fns";
 import { EMPTY_BOOKING, type BookingData } from "./booking-types";
 import { StepTrip } from "./step-trip";
 import { StepRoute } from "./step-route";
@@ -21,6 +23,48 @@ const STEPS: { label: string; sub: string }[] = [
     { label: "Route", sub: "Locations & extras" },
     { label: "Confirm", sub: "Review & book" },
 ];
+// ── Trip Summary Bar ────────────────────────────────────────────────────────
+
+function TripSummaryBar({ data, onEdit }: { data: BookingData; onEdit: () => void }) {
+    const hasData = data.pickupDate && data.pickupTime && data.dropoffDate && data.dropoffTime;
+    if (!hasData) return null;
+
+    const fmt = (d: Date) => format(d, "MMM d, yyyy");
+
+    const items = [
+        { label: "Pick-up", value: `${fmt(data.pickupDate!)} · ${data.pickupTime}` },
+        { label: "Drop-off", value: `${fmt(data.dropoffDate!)} · ${data.dropoffTime}` },
+        ...(data.vehicleType ? [{ label: "Vehicle", value: data.vehicleType }] : []),
+        ...(data.region ? [{ label: "Region", value: data.region }] : []),
+        ...(data.quantity > 1 ? [{ label: "Qty", value: String(data.quantity) }] : []),
+    ];
+
+    return (
+        <div className="mb-5 flex items-start justify-between gap-3 rounded-xl border border-[#1e2a2c] bg-[#0d1514] px-4 py-3">
+            <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+                {items.map((item) => (
+                    <div key={item.label} className="flex flex-col gap-0.5">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-[#3a5060]">
+                            {item.label}
+                        </span>
+                        <span className="text-[13px] font-medium text-white/90">{item.value}</span>
+                    </div>
+                ))}
+            </div>
+            <button
+                type="button"
+                onClick={onEdit}
+                title="Edit booking details"
+                className="mt-0.5 flex shrink-0 items-center gap-1.5 rounded-lg border border-[#2a3336] px-2.5 py-1.5 text-[12px] font-medium text-[#bca066] transition-colors hover:border-[#bca066]/40 hover:bg-[#bca066]/10"
+            >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+            </button>
+        </div>
+    );
+}
+
+// ── Step Indicator ──────────────────────────────────────────────────────────
 
 function StepIndicator({ current }: { current: Step }) {
     return (
@@ -77,15 +121,39 @@ export function BookingStepIndicator({ step }: { step: Step }) {
     return <StepIndicator current={step} />;
 }
 
-export function BookingWizard({ onStepChange }: { onStepChange?: (s: number) => void }) {
-    const [step, setStep] = useState<Step>(1);
-    const [data, setData] = useState<BookingData>(() => {
-        // Hydrate from pendingBooking saved on homepage
-        if (typeof window === "undefined") return EMPTY_BOOKING;
+function initWizard(): { step: Step; fromQuickBooking: boolean; data: BookingData } {
+    // Always start at step 1 on SSR — client-side effect will adjust
+    return { step: 1, fromQuickBooking: false, data: EMPTY_BOOKING };
+}
+
+export function BookingWizard({ onStepChange, renderIndicator }: { onStepChange?: (s: number) => void; renderIndicator?: (step: Step) => React.ReactNode }) {
+    const [{ step, fromQuickBooking, data }, setWizardState] = useState(initWizard);
+
+    const setStep = (s: Step) => {
+        setWizardState((prev) => ({ ...prev, step: s }));
+        onStepChange?.(s);
+    };
+    const setFromQuickBooking = (v: boolean) => setWizardState((prev) => ({ ...prev, fromQuickBooking: v }));
+    const setData = (updater: (prev: BookingData) => BookingData) =>
+        setWizardState((prev) => ({ ...prev, data: updater(prev.data) }));
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
+    const [serverPrice, setServerPrice] = useState<BookingPriceResult | null>(null);
+    const [priceLoading, setPriceLoading] = useState(false);
+    const [freeAddons, setFreeAddons] = useState<ApiAddon[]>([]);
+    const [paidAddons, setPaidAddons] = useState<ApiAddon[]>([]);
+    const [addonsLoading, setAddonsLoading] = useState(true);
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // On mount (client only): load pending booking from localStorage and jump to step 2
+    useLayoutEffect(() => {
         const pending = loadPendingBooking();
-        if (!pending) return EMPTY_BOOKING;
+        if (!pending) {
+            onStepChange?.(1);
+            return;
+        }
         clearPendingBooking();
-        return {
+        const loaded: BookingData = {
             ...EMPTY_BOOKING,
             pickupDate: pending.pickupDate ? new Date(pending.pickupDate) : undefined,
             dropoffDate: pending.dropoffDate ? new Date(pending.dropoffDate) : undefined,
@@ -97,15 +165,20 @@ export function BookingWizard({ onStepChange }: { onStepChange?: (s: number) => 
             region: pending.region,
             regionId: pending.regionId,
         };
-    });
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submitted, setSubmitted] = useState(false);
-    const [serverPrice, setServerPrice] = useState<BookingPriceResult | null>(null);
-    const [priceLoading, setPriceLoading] = useState(false);
-    const [freeAddons, setFreeAddons] = useState<ApiAddon[]>([]);
-    const [paidAddons, setPaidAddons] = useState<ApiAddon[]>([]);
-    const [addonsLoading, setAddonsLoading] = useState(true);
-    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+        const hasTripData = !!(
+            loaded.pickupDate && loaded.pickupTime &&
+            loaded.dropoffDate && loaded.dropoffTime &&
+            loaded.vehicleTypeId
+        );
+        if (hasTripData) {
+            setWizardState({ step: 2, fromQuickBooking: true, data: loaded });
+            onStepChange?.(2);
+        } else {
+            setWizardState((prev) => ({ ...prev, data: loaded }));
+            onStepChange?.(1);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Fetch addons once on mount
     useEffect(() => {
@@ -140,9 +213,8 @@ export function BookingWizard({ onStepChange }: { onStepChange?: (s: number) => 
         return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
     }, [data]);
 
-    async function goTo(s: Step) {
+    function goTo(s: Step) {
         setStep(s);
-        onStepChange?.(s);
     }
 
     function handleChange(patch: Partial<BookingData>) {
@@ -219,24 +291,37 @@ export function BookingWizard({ onStepChange }: { onStepChange?: (s: number) => 
 
     return (
         <div>
-            {step === 1 && (
-                <StepTrip data={data} onChange={handleChange} onNext={() => goTo(2)} priceBar={priceBarEl} />
-            )}
-            {step === 2 && (
-                <StepRoute data={data} onChange={handleChange} onNext={() => goTo(3)} onBack={() => goTo(1)} priceBar={priceBarEl} freeAddons={freeAddons} paidAddons={paidAddons} addonsLoading={addonsLoading} />
-            )}
-            {step === 3 && (
-                <StepConfirm
-                    data={data}
-                    serverPrice={serverPrice}
-                    priceLoading={priceLoading}
-                    freeAddons={freeAddons}
-                    paidAddons={paidAddons}
-                    onBack={() => goTo(2)}
-                    onConfirm={handleConfirm}
-                    isLoading={isSubmitting}
-                />
-            )}
+            {renderIndicator?.(step)}
+            <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-8 sm:py-12">
+                {step === 1 && (
+                    <StepTrip data={data} onChange={handleChange} onNext={() => goTo(2)} priceBar={priceBarEl} />
+                )}
+                {step === 2 && (
+                    <>
+                        {fromQuickBooking && (
+                            <TripSummaryBar data={data} onEdit={() => { setFromQuickBooking(false); goTo(1); }} />
+                        )}
+                        <StepRoute data={data} onChange={handleChange} onNext={() => goTo(3)} onBack={() => goTo(1)} priceBar={priceBarEl} freeAddons={freeAddons} paidAddons={paidAddons} addonsLoading={addonsLoading} />
+                    </>
+                )}
+                {step === 3 && (
+                    <>
+                        {fromQuickBooking && (
+                            <TripSummaryBar data={data} onEdit={() => { setFromQuickBooking(false); goTo(1); }} />
+                        )}
+                        <StepConfirm
+                            data={data}
+                            serverPrice={serverPrice}
+                            priceLoading={priceLoading}
+                            freeAddons={freeAddons}
+                            paidAddons={paidAddons}
+                            onBack={() => goTo(2)}
+                            onConfirm={handleConfirm}
+                            isLoading={isSubmitting}
+                        />
+                    </>
+                )}
+            </main>
         </div>
     );
 }

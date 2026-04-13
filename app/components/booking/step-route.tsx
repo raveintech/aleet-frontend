@@ -59,7 +59,7 @@ export function StepRoute({ data, onChange, onNext, onBack, priceBar, freeAddons
         return sum + (addon?.price ?? 0);
     }, 0);
 
-    const isValid = data.freeRouting || !!data.dropoffAddress;
+    const isValid = !!data.pickupAddress.text && (data.freeRouting || !!data.dropoffAddress.text);
 
     return (
         <div>
@@ -96,22 +96,46 @@ export function StepRoute({ data, onChange, onNext, onBack, priceBar, freeAddons
                 </div>
             </div>
 
+            {/* ─── Fleet Size ─── */}
+            <div className="my-3 rounded-2xl border border-[#1e2a2c] bg-[#0c1211] p-4 sm:p-6">
+                <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-[#3a5060]">Fleet Size</p>
+                <div className="flex items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={() => onChange({ quantity: Math.max(1, data.quantity - 1) })}
+                        disabled={data.quantity <= 1}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#2e3638] bg-[#1e2527] text-white/60 transition-colors hover:border-[#bca066]/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+                    >
+                        <span className="text-lg font-light leading-none">−</span>
+                    </button>
+                    <div className="flex min-w-16 flex-col items-center">
+                        <span className="text-[22px] font-semibold leading-none text-white tabular-nums">{data.quantity}</span>
+                        <span className="mt-0.5 text-[10px] text-[#5a7060]">vehicle{data.quantity > 1 ? "s" : ""}</span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => onChange({ quantity: Math.min(10, data.quantity + 1) })}
+                        disabled={data.quantity >= 10}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#2e3638] bg-[#1e2527] text-white/60 transition-colors hover:border-[#bca066]/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+                    >
+                        <span className="text-lg font-light leading-none">+</span>
+                    </button>
+                </div>
+            </div>
+
             {/* ─── Locations ─── */}
             <div className="rounded-2xl border border-[#1e2a2c] bg-[#0c1211] p-4 sm:p-6">
                 <p className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-[#3a5060]">Locations</p>
 
                 <div className="flex flex-col gap-3">
-                    {/* Pickup — read-only, filled in Step 1 */}
-                    <div>
-                        <p className="mb-1.5 text-[12px] font-semibold uppercase tracking-widest text-[#7a8a9a]">Pickup Address</p>
-                        <div className="flex h-11 items-center gap-2 rounded-lg border border-[#1e2a2c] bg-[#111918]/60 px-3 sm:h-12">
-                            <span className="text-[#bca066]/50">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-3.5 w-3.5"><path d="M12 21c-4.418-4.418-7-7.582-7-10a7 7 0 1 1 14 0c0 2.418-2.582 5.582-7 10Z" /><circle cx="12" cy="11" r="2.5" /></svg>
-                            </span>
-                            <span className="flex-1 truncate text-[13px] text-white/70">{data.pickupAddress.text}</span>
-                            <span className="text-[10px] text-[#3a5060]">from step 1</span>
-                        </div>
-                    </div>
+                    {/* Pickup address — editable */}
+                    <AddressAutocomplete
+                        label="Pickup Address"
+                        value={data.pickupAddress.text}
+                        onChange={(v) => onChange({ pickupAddress: { ...data.pickupAddress, text: v } })}
+                        onPlaceChange={(place) => onChange({ pickupAddress: place })}
+                        placeholder="123 Main St, New York, NY"
+                    />
 
                     {/* Stops */}
                     {!data.freeRouting && data.stops.map((stop, i) => (
