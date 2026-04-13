@@ -150,8 +150,8 @@ export function Popup({
             ref={popupRef}
             data-dropdown-popup=""
             style={coords
-                ? { top: coords.top, left: coords.left, minWidth: coords.width }
-                : { top: -9999, left: -9999, minWidth: 0 }
+                ? { top: coords.top, left: coords.left, width: coords.width }
+                : { top: -9999, left: -9999, width: 0 }
             }
             className={`fixed z-9999 overflow-hidden rounded-xl border border-[#2a3336] bg-[#111918] shadow-[0_16px_48px_rgba(0,0,0,0.6)] transition-opacity duration-150 ${visible ? "opacity-100" : "opacity-0"}`}
         >

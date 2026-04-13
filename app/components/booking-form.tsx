@@ -16,6 +16,7 @@ import {
     slotFromTimeStr,
 } from "@/lib/booking-constraints";
 import type { SelectOption } from "./ui/select";
+import { toast } from "sonner";
 
 const STATE_OPTIONS: SelectOption[] = [];
 
@@ -36,7 +37,7 @@ export function BookingForm() {
     const [vehicleList, setVehicleList] = useState<VehicleOption[]>([]);
     const [regionList, setRegionList] = useState<RegionOption[]>([]);
 
-    // Reset drop-off date when it falls outside the new pickup window
+
     const handlePickupDateChange = (d: Date | undefined) => {
         setPickupDate(d);
         if (d && dropoffDate && dropoffDate < d) {
@@ -45,7 +46,7 @@ export function BookingForm() {
         }
     };
 
-    // Reset drop-off time when pickup time changes and combo becomes invalid
+
     const handlePickupTimeChange = (t: string) => {
         setPickupTime(t);
         // If a full combo exists, verify it's still ≥ 3 h
@@ -82,6 +83,12 @@ export function BookingForm() {
     }, []);
 
     const handleQuickBooking = useCallback(async () => {
+
+        if (!pickupDate || !pickupTime || !dropoffDate || !dropoffTime || !vehicle || !state) {
+            toast.error("Please fill in all fields before proceeding.");
+            return;
+        }
+
         if (isLoading) return;
         setIsLoading(true);
 
