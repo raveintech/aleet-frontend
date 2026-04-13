@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
@@ -13,7 +14,10 @@ import { cn } from "@/lib/utils";
 import {
     isPickupTimeDisabled,
     isDropoffTimeDisabled,
+    isDropoffTimeBeforePickup,
     slotFromTimeStr,
+    combineDateAndTime,
+    MIN_DURATION_HOURS,
 } from "@/lib/booking-constraints";
 import type { SelectOption } from "./ui/select";
 import { toast } from "sonner";
@@ -135,67 +139,92 @@ export function BookingForm() {
     const vehicleOptions: SelectOption[] = vehicleList;
     const regionOptions: SelectOption[] = regionList;
 
-    return (
-        <section className="rounded-2xl border border-[#2a3336] bg-[rgba(12,18,17,0.82)] p-3 shadow-[0_14px_40px_rgba(0,0,0,0.4)] backdrop-blur-sm sm:p-5">
-            {/* Row 1: Pick Up + Vehicle */}
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-                <DatePicker label="Pick Up Date" value={pickupDate} onChange={handlePickupDateChange} />
-                <TimePicker
-                    label="Pick Up Time"
-                    value={pickupTime}
-                    onChange={handlePickupTimeChange}
-                    disableSlot={(slot) => isPickupTimeDisabled(pickupDate, slot)}
-                />
-                <Select
-                    label="Vehicle Type"
-                    placeholder="Select Vehicle"
-                    icon={<CarIcon className="h-3.5 w-3.5" />}
-                    options={vehicleOptions}
-                    value={vehicle}
-                    onChange={setVehicle}
-                />
-                <Select
-                    label="State"
-                    placeholder="Select State"
-                    icon={<MapPinIcon className="h-3.5 w-3.5" />}
-                    options={regionOptions}
-                    value={state}
-                    onChange={setState}
-                />
-            </div>
+    // Calculate duration in hours between pickup and dropoff
+    const durationHours = (() => {
+        if (!pickupDate || !pickupTime || !dropoffDate || !dropoffTime) return null;
+        const start = combineDateAndTime(pickupDate, pickupTime);
+        const end = combineDateAndTime(dropoffDate, dropoffTime);
+        if (!start || !end) return null;
+        const h = (end.getTime() - start.getTime()) / 3_600_000;
+        return h > 0 ? h : 0;
+    })();
 
-            {/* Row 2: Drop-off + CTA */}
-            <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-6 sm:grid-cols-4 sm:gap-3">
-                <DatePicker
-                    label="Drop-off Date"
-                    value={dropoffDate}
-                    onChange={handleDropoffDateChange}
-                    minDate={pickupDate}
-                />
-                <TimePicker
-                    label="Drop-off Time"
-                    value={dropoffTime}
-                    onChange={setDropoffTime}
-                    disableSlot={(slot) =>
-                        isDropoffTimeDisabled(pickupDate, pickupTime, dropoffDate, slot)
-                    }
-                    disabledMessage={!dropoffDate ? "Select a drop-off date first" : "Min. 3h after pick-up time"}
-                />
-                <button
-                    type="button"
-                    disabled={isLoading || undefined}
-                    onClick={handleQuickBooking}
-                    className={cn(
-                        "col-span-2 mt-1 cursor-pointer inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#4a171a] px-4 text-[14px] font-medium text-white transition-colors hover:bg-[#5a1e22] sm:col-span-2 sm:mt-6 sm:h-12 sm:text-[15px]",
-                        isLoading && "cursor-not-allowed opacity-60",
-                    )}
-                >
-                    {isLoading && (
-                        <Loader2 className="mr-2 h-[1em] w-[1em] animate-spin" />
-                    )}
-                    Quick Booking (3+ Hrs)
-                </button>
-            </div>
-        </section>
+    const isDurationTooShort = durationHours !== null && durationHours < MIN_DURATION_HOURS;
+    const showMinimumNotice = durationHours !== null && durationHours < MIN_DURATION_HOURS;
+    const isBookingDisabled = isLoading || isDurationTooShort;
+
+    return (
+        <>
+            <section className="rounded-2xl border border-[#2a3336] bg-[rgba(12,18,17,0.82)] p-3 shadow-[0_14px_40px_rgba(0,0,0,0.4)] backdrop-blur-sm sm:p-5">
+                {/* Row 1: Pick Up + Vehicle */}
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+                    <DatePicker label="Pick Up Date" value={pickupDate} onChange={handlePickupDateChange} />
+                    <TimePicker
+                        label="Pick Up Time"
+                        value={pickupTime}
+                        onChange={handlePickupTimeChange}
+                        disableSlot={(slot) => isPickupTimeDisabled(pickupDate, slot)}
+                    />
+                    <Select
+                        label="Vehicle Type"
+                        placeholder="Select Vehicle"
+                        icon={<CarIcon className="h-3.5 w-3.5" />}
+                        options={vehicleOptions}
+                        value={vehicle}
+                        onChange={setVehicle}
+                    />
+                    <Select
+                        label="State"
+                        placeholder="Select State"
+                        icon={<MapPinIcon className="h-3.5 w-3.5" />}
+                        options={regionOptions}
+                        value={state}
+                        onChange={setState}
+                    />
+                </div>
+
+                {/* Row 2: Drop-off + CTA */}
+                <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-6 sm:grid-cols-4 sm:gap-3">
+                    <DatePicker
+                        label="Drop-off Date"
+                        value={dropoffDate}
+                        onChange={handleDropoffDateChange}
+                        minDate={pickupDate}
+                    />
+                    <TimePicker
+                        label="Drop-off Time"
+                        value={dropoffTime}
+                        onChange={setDropoffTime}
+                        disableSlot={(slot) =>
+                            isDropoffTimeBeforePickup(pickupDate, pickupTime, dropoffDate, slot)
+                        }
+                        disabledMessage="Must be after pick-up time"
+                    />
+                    <button
+                        type="button"
+                        aria-disabled={isBookingDisabled}
+                        onClick={isBookingDisabled ? undefined : handleQuickBooking}
+                        className={cn(
+                            "col-span-2 mt-1 inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#4a171a] px-4 text-[14px] font-medium text-white transition-colors hover:bg-[#5a1e22] sm:col-span-2 sm:mt-6 sm:h-12 sm:text-[15px]",
+                            isBookingDisabled ? "cursor-not-allowed opacity-60" : "cursor-pointer",
+                        )}
+                    >
+                        {isLoading && (
+                            <Loader2 className="mr-2 h-[1em] w-[1em] animate-spin" />
+                        )}
+                        Quick Booking (3+ Hrs)
+                    </button>
+                </div>
+            </section>
+            {showMinimumNotice && (
+                <p className="mt-2.5 px-1 text-[11px] text-[#5a7080] sm:mt-3">
+                    Regular bookings require a <span className="text-[#bca066]/80">3-hour minimum</span>.{" "}
+                    <Link href="#" className="text-[#bca066]/80 underline underline-offset-2 hover:text-[#bca066] transition-colors">
+                        Membership
+                    </Link>{" "}
+                    removes the minimum.
+                </p>
+            )}
+        </>
     );
 }

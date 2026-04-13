@@ -20,7 +20,7 @@ export function AuthMenu() {
         </span>
       </Link>
 
-      <button
+      {/* <button
         className={cn(
           "justify-self-end inline-flex cursor-pointer items-center gap-1.5 rounded-full border-0 bg-[#222] px-1 py-[3px] pr-[6px] text-[#b8b8b8] sm:px-2 sm:pr-[8px]",
         )}
@@ -33,7 +33,7 @@ export function AuthMenu() {
           <br />
           Mode
         </span>
-      </button>
+      </button> */}
     </header>
   );
 }

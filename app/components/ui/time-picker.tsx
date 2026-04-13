@@ -76,20 +76,20 @@ export function TimePicker({
                             {/* Hour */}
                             <SpinnerColumn
                                 value={hour}
-                                onUp={() => setHour(cycle(HOURS, hour, -1))}
-                                onDown={() => setHour(cycle(HOURS, hour, 1))}
+                                onUp={() => setHour(cycle(HOURS, hour, 1))}
+                                onDown={() => setHour(cycle(HOURS, hour, -1))}
                             />
                             {/* Minute */}
                             <SpinnerColumn
                                 value={minute}
-                                onUp={() => setMinute(cycle(MINUTES, minute, -1))}
-                                onDown={() => setMinute(cycle(MINUTES, minute, 1))}
+                                onUp={() => setMinute(cycle(MINUTES, minute, 1))}
+                                onDown={() => setMinute(cycle(MINUTES, minute, -1))}
                             />
                             {/* Period */}
                             <SpinnerColumn
                                 value={period}
-                                onUp={() => setPeriod(cycle(PERIODS, period, -1))}
-                                onDown={() => setPeriod(cycle(PERIODS, period, 1))}
+                                onUp={() => setPeriod(cycle(PERIODS, period, 1))}
+                                onDown={() => setPeriod(cycle(PERIODS, period, -1))}
                             />
                         </div>
 

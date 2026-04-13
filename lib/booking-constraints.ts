@@ -123,7 +123,7 @@ export function isDropoffTimeDisabled(
   slot: TimeSlot,
 ): boolean {
   // If drop-off date is not yet chosen, block all slots so the user picks a date first
-  if (!pickupDate || !pickupTime || !dropoffDate) return true;
+  if (!pickupDate || !pickupTime || !dropoffDate) return false;
 
   const pickupParsed = parseTime(pickupTime);
   if (!pickupParsed) return false;
@@ -153,4 +153,45 @@ export function isDropoffTimeDisabled(
 
   // Must be ≥ 3h
   return diffHours < MIN_DURATION_HOURS;
+}
+
+/**
+ * Returns `true` when a given time-slot is **before or equal** to the pickup
+ * time (on the same date context). Used to block logically impossible drop-off
+ * times without enforcing the 3-hour minimum at the picker level.
+ */
+export function isDropoffTimeBeforePickup(
+  pickupDate: Date | undefined,
+  pickupTime: string,
+  dropoffDate: Date | undefined,
+  slot: TimeSlot,
+): boolean {
+  if (!pickupDate || !pickupTime || !dropoffDate) return false;
+
+  const pickupParsed = parseTime(pickupTime);
+  if (!pickupParsed) return false;
+
+  const pickupMs = new Date(
+    pickupDate.getFullYear(),
+    pickupDate.getMonth(),
+    pickupDate.getDate(),
+    pickupParsed.hours,
+    pickupParsed.minutes,
+  ).getTime();
+
+  let h = parseInt(slot.hour, 10);
+  const m = parseInt(slot.minute, 10);
+  if (slot.period === "PM" && h !== 12) h += 12;
+  if (slot.period === "AM" && h === 12) h = 0;
+
+  const dropoffMs = new Date(
+    dropoffDate.getFullYear(),
+    dropoffDate.getMonth(),
+    dropoffDate.getDate(),
+    h,
+    m,
+  ).getTime();
+
+  // Block slots that are at or before pickup time
+  return dropoffMs <= pickupMs;
 }
