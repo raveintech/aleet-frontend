@@ -10,7 +10,7 @@ type Props = {
     data: BookingData;
     onChange: (patch: Partial<BookingData>) => void;
     onNext: () => void;
-    onBack: () => void;
+    onBack?: () => void;
     priceBar?: React.ReactNode;
     freeAddons: ApiAddon[];
     paidAddons: ApiAddon[];
@@ -18,7 +18,7 @@ type Props = {
 };
 
 function nanoid() {
-    return Math.random().toString(36).slice(2, 10);
+    return Math.random().toString(36).slice(2, 500);
 }
 
 export function StepRoute({ data, onChange, onNext, onBack, priceBar, freeAddons, paidAddons, addonsLoading }: Props) {
@@ -70,32 +70,6 @@ export function StepRoute({ data, onChange, onNext, onBack, priceBar, freeAddons
                 Set your drop-off location, stops, and any extras for the trip.
             </p>
 
-            {/* ─── Free Routing ─── */}
-            <div className="my-3 rounded-2xl border border-[#1e2a2c] bg-[#0c1211] p-4 sm:p-6">
-                <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#bca066]/10 text-[#bca066]">
-                            <Navigation className="h-4 w-4" />
-                        </span>
-                        <div>
-                            <p className="text-[14px] font-semibold text-white">Free Routing</p>
-                            <p className="mt-0.5 text-[12px] leading-relaxed text-white/45 sm:text-[13px]">
-                                Skip setting a fixed drop-off address and direct your driver during the trip.
-                                Ideal for flexible itineraries — your driver follows your lead in real time.
-                                Billing is based on total hours driven.
-                            </p>
-                        </div>
-                    </div>
-                    {/* Toggle */}
-                    <Toggle
-                        checked={data.freeRouting}
-                        onChange={(v) => onChange({ freeRouting: v, stops: [], dropoffAddress: { text: "", placeId: "" } })}
-                        ariaLabel="Toggle free routing"
-                        className="mt-0.5 shrink-0"
-                    />
-                </div>
-            </div>
-
             {/* ─── Fleet Size ─── */}
             <div className="my-3 rounded-2xl border border-[#1e2a2c] bg-[#0c1211] p-4 sm:p-6">
                 <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-[#3a5060]">Fleet Size</p>
@@ -114,8 +88,8 @@ export function StepRoute({ data, onChange, onNext, onBack, priceBar, freeAddons
                     </div>
                     <button
                         type="button"
-                        onClick={() => onChange({ quantity: Math.min(10, data.quantity + 1) })}
-                        disabled={data.quantity >= 10}
+                        onClick={() => onChange({ quantity: Math.min(500, data.quantity + 1) })}
+                        disabled={data.quantity >= 500}
                         className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#2e3638] bg-[#1e2527] text-white/60 transition-colors hover:border-[#bca066]/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
                     >
                         <span className="text-lg font-light leading-none">+</span>
@@ -126,6 +100,27 @@ export function StepRoute({ data, onChange, onNext, onBack, priceBar, freeAddons
             {/* ─── Locations ─── */}
             <div className="rounded-2xl border border-[#1e2a2c] bg-[#0c1211] p-4 sm:p-6">
                 <p className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-[#3a5060]">Locations</p>
+
+                {/* Free Routing toggle */}
+                <div className="mb-4 flex items-start justify-between gap-4 rounded-xl border border-[#1e2a2c] bg-[#111918]/60 p-3.5">
+                    <div className="flex items-start gap-3">
+                        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#bca066]/10 text-[#bca066]">
+                            <Navigation className="h-3.5 w-3.5" />
+                        </span>
+                        <div>
+                            <p className="text-[13px] font-semibold text-white">Free Routing</p>
+                            <p className="mt-0.5 text-[11px] leading-relaxed text-white/45 sm:text-[12px]">
+                                Skip setting a fixed drop-off — direct your driver in real time.
+                            </p>
+                        </div>
+                    </div>
+                    <Toggle
+                        checked={data.freeRouting}
+                        onChange={(v) => onChange({ freeRouting: v, stops: [] })}
+                        ariaLabel="Toggle free routing"
+                        className="mt-0.5 shrink-0"
+                    />
+                </div>
 
                 <div className="flex flex-col gap-3">
                     {/* Pickup address — editable */}
@@ -165,7 +160,6 @@ export function StepRoute({ data, onChange, onNext, onBack, priceBar, freeAddons
                         onChange={(v) => onChange({ dropoffAddress: { ...data.dropoffAddress, text: v } })}
                         onPlaceChange={(place) => onChange({ dropoffAddress: place })}
                         placeholder="456 Park Ave, New York, NY"
-                        disabled={data.freeRouting}
                     />
                 </div>
 
@@ -299,9 +293,11 @@ export function StepRoute({ data, onChange, onNext, onBack, priceBar, freeAddons
             <div className="mt-6">
                 {priceBar}
                 <div className="flex gap-3">
-                    <Button variant="ghost" className="w-full sm:w-auto sm:min-w-36 bg-transparent border-0 text-sm!" onClick={onBack}>
-                        ← Back
-                    </Button>
+                    {onBack && (
+                        <Button variant="ghost" className="w-full sm:w-auto sm:min-w-36 bg-transparent border-0 text-sm!" onClick={onBack}>
+                            ← Back
+                        </Button>
+                    )}
                     <Button className="flex-1" disabled={!isValid} onClick={onNext}>
                         Review Booking →
                     </Button>

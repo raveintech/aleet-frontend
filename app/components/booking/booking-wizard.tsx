@@ -2,7 +2,7 @@
 
 import { Fragment, useState, useEffect, useLayoutEffect, useRef } from "react";
 import Link from "next/link";
-import { Pencil } from "lucide-react";
+import { Pencil, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { EMPTY_BOOKING, type BookingData } from "./booking-types";
 import { StepTrip } from "./step-trip";
@@ -10,10 +10,19 @@ import { StepRoute } from "./step-route";
 import { StepConfirm } from "./step-confirm";
 import { calculateBookingPrice, startBooking, type BookingPriceResult } from "@/lib/api/bookings";
 import { fetchAddons, type ApiAddon } from "@/lib/api/addons";
+import { getVehicleTypes, type VehicleType } from "@/lib/api/vehicle-types";
+import { getRegions, type Region } from "@/lib/api/regions";
 import { PriceBar } from "./price-bar";
 import { getToken } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
-import { toast } from "@/app/components/ui";
+import { toast, DatePicker, TimePicker, Select } from "@/app/components/ui";
+import { CarIcon, MapPinIcon } from "@/app/components/ui/icons";
+import type { SelectOption } from "@/app/components/ui/select";
+import {
+    isPickupTimeDisabled,
+    isDropoffTimeDisabled,
+    slotFromTimeStr,
+} from "@/lib/booking-constraints";
 import { loadPendingBooking, clearPendingBooking } from "@/lib/pending-booking";
 
 type Step = 1 | 2 | 3;
@@ -25,52 +34,193 @@ const STEPS: { label: string; sub: string }[] = [
 ];
 // ── Trip Summary Bar ────────────────────────────────────────────────────────
 
-function TripSummaryBar({ data, onEdit }: { data: BookingData; onEdit: () => void }) {
-    const hasData = data.pickupDate && data.pickupTime && data.dropoffDate && data.dropoffTime;
-    if (!hasData) return null;
+function TripSummaryBar({ data, onChange }: { data: BookingData; onChange: (patch: Partial<BookingData>) => void }) {
+    const [editing, setEditing] = useState(false);
+    const [vehicleOptions, setVehicleOptions] = useState<SelectOption[]>([]);
+    const [regionOptions, setRegionOptions] = useState<SelectOption[]>([]);
+    const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
+    const [regions, setRegions] = useState<Region[]>([]);
+
+    useEffect(() => {
+        getVehicleTypes()
+            .then((res) => {
+                const types = res.data ?? [];
+                setVehicleTypes(types);
+                setVehicleOptions(types.map((v) => ({ label: v.name, price: `$${v.hourlyPrice}/hr` })));
+            })
+            .catch(() => { });
+        getRegions()
+            .then((res) => {
+                const list = res.data ?? [];
+                setRegions(list);
+                setRegionOptions(list.map((r: Region) => ({ label: r.name })));
+            })
+            .catch(() => { });
+    }, []);
+
+    const hasFullData = data.pickupDate && data.pickupTime && data.dropoffDate && data.dropoffTime;
 
     const fmt = (d: Date) => format(d, "MMM d, yyyy");
 
-    const items = [
-        { label: "Pick-up", value: `${fmt(data.pickupDate!)} · ${data.pickupTime}` },
-        { label: "Drop-off", value: `${fmt(data.dropoffDate!)} · ${data.dropoffTime}` },
-        ...(data.vehicleType ? [{ label: "Vehicle", value: data.vehicleType }] : []),
-        ...(data.region ? [{ label: "Region", value: data.region }] : []),
-        ...(data.quantity > 1 ? [{ label: "Qty", value: String(data.quantity) }] : []),
-    ];
+    function handleRegionChange(display: string) {
+        const found = regions.find((r) => r.name === display);
+        onChange({ region: display, regionId: found?._id ?? "" });
+    }
+
+    function handleVehicleChange(display: string) {
+        const name = display.split(" $")[0];
+        const found = vehicleTypes.find((v) => v.name === name);
+        onChange({
+            vehicleType: display,
+            vehicleTypeId: found?._id ?? "",
+            vehicleHourlyRate: found?.hourlyPrice ?? 0,
+        });
+    }
+
+    function handlePickupDateChange(d: Date | undefined) {
+        const patch: Partial<BookingData> = { pickupDate: d };
+        if (d && data.dropoffDate && data.dropoffDate < d) {
+            patch.dropoffDate = undefined;
+            patch.dropoffTime = "";
+        }
+        onChange(patch);
+    }
+
+    function handlePickupTimeChange(t: string) {
+        const patch: Partial<BookingData> = { pickupTime: t };
+        if (data.pickupDate && data.dropoffDate && data.dropoffTime) {
+            const invalid = isDropoffTimeDisabled(data.pickupDate, t, data.dropoffDate, slotFromTimeStr(data.dropoffTime));
+            if (invalid) patch.dropoffTime = "";
+        }
+        onChange(patch);
+    }
+
+    function handleDropoffDateChange(d: Date | undefined) {
+        const patch: Partial<BookingData> = { dropoffDate: d };
+        if (!data.dropoffTime && data.pickupTime) {
+            patch.dropoffTime = data.pickupTime;
+        }
+        if (d && data.pickupDate && data.pickupTime && data.dropoffTime) {
+            const invalid = isDropoffTimeDisabled(data.pickupDate, data.pickupTime, d, slotFromTimeStr(data.dropoffTime));
+            if (invalid) patch.dropoffTime = "";
+        }
+        onChange(patch);
+    }
+
+    if (!editing && hasFullData) {
+        const items = [
+            { label: "Pick-up", value: `${fmt(data.pickupDate!)} · ${data.pickupTime}` },
+            { label: "Drop-off", value: `${fmt(data.dropoffDate!)} · ${data.dropoffTime}` },
+            ...(data.vehicleType ? [{ label: "Vehicle", value: data.vehicleType }] : []),
+            ...(data.region ? [{ label: "Region", value: data.region }] : []),
+            ...(data.quantity > 1 ? [{ label: "Qty", value: String(data.quantity) }] : []),
+        ];
+
+        return (
+            <div className="mb-5 flex items-start justify-between gap-3 rounded-xl border border-[#1e2a2c] bg-[#0d1514] px-4 py-3">
+                <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+                    {items.map((item) => (
+                        <div key={item.label} className="flex flex-col gap-0.5">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#3a5060]">
+                                {item.label}
+                            </span>
+                            <span className="text-[13px] font-medium text-white/90">{item.value}</span>
+                        </div>
+                    ))}
+                </div>
+                <button
+                    type="button"
+                    onClick={() => setEditing(true)}
+                    title="Edit trip details"
+                    className="mt-0.5 flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-[#2a3336] px-2.5 py-1.5 text-[12px] font-medium text-[#bca066] transition-colors hover:border-[#bca066]/40 hover:bg-[#bca066]/10"
+                >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit
+                </button>
+            </div>
+        );
+    }
+
+    function handleDone() {
+        if (!data.pickupDate || !data.pickupTime || !data.dropoffDate || !data.dropoffTime) {
+            toast.error("Please fill in all date and time fields before closing.");
+            return;
+        }
+        setEditing(false);
+    }
 
     return (
-        <div className="mb-5 flex items-start justify-between gap-3 rounded-xl border border-[#1e2a2c] bg-[#0d1514] px-4 py-3">
-            <div className="flex flex-wrap gap-x-5 gap-y-1.5">
-                {items.map((item) => (
-                    <div key={item.label} className="flex flex-col gap-0.5">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-[#3a5060]">
-                            {item.label}
-                        </span>
-                        <span className="text-[13px] font-medium text-white/90">{item.value}</span>
-                    </div>
-                ))}
+        <div className="mb-5 rounded-xl border border-[#bca066]/30 bg-[#0d1514] p-4 sm:p-5">
+            <div className="mb-4 flex items-center justify-between">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-[#3a5060]">Edit Trip Details</p>
+                <button
+                    type="button"
+                    onClick={handleDone}
+                    className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#bca066]/30 bg-[#bca066]/10 px-2.5 py-1.5 text-[12px] font-medium text-[#bca066] transition-colors hover:bg-[#bca066]/20"
+                >
+                    <ChevronUp className="h-3.5 w-3.5" />
+                    Done
+                </button>
             </div>
-            <button
-                type="button"
-                onClick={onEdit}
-                title="Edit booking details"
-                className="mt-0.5 flex shrink-0 items-center gap-1.5 rounded-lg border border-[#2a3336] px-2.5 py-1.5 text-[12px] font-medium text-[#bca066] transition-colors hover:border-[#bca066]/40 hover:bg-[#bca066]/10"
-            >
-                <Pencil className="h-3.5 w-3.5" />
-                Edit
-            </button>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <DatePicker label="Pick Up Date" value={data.pickupDate} onChange={handlePickupDateChange} />
+                <TimePicker
+                    label="Pick Up Time"
+                    value={data.pickupTime}
+                    onChange={handlePickupTimeChange}
+                    disableSlot={(slot) => isPickupTimeDisabled(data.pickupDate, slot)}
+                />
+                <Select
+                    label="Vehicle Type"
+                    placeholder="Select Vehicle"
+                    icon={<CarIcon className="h-3.5 w-3.5" />}
+                    options={vehicleOptions}
+                    value={data.vehicleType}
+                    onChange={handleVehicleChange}
+                />
+                <Select
+                    label="Region"
+                    placeholder="Select Region"
+                    icon={<MapPinIcon className="h-3.5 w-3.5" />}
+                    options={regionOptions}
+                    value={data.region}
+                    onChange={handleRegionChange}
+                />
+            </div>
+
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <DatePicker
+                    label="Drop-off Date"
+                    value={data.dropoffDate}
+                    onChange={handleDropoffDateChange}
+                    minDate={data.pickupDate}
+                />
+                <TimePicker
+                    label="Drop-off Time"
+                    value={data.dropoffTime}
+                    onChange={(t) => onChange({ dropoffTime: t })}
+                    disableSlot={(slot) =>
+                        isDropoffTimeDisabled(data.pickupDate, data.pickupTime, data.dropoffDate, slot)
+                    }
+                    disabledMessage={!data.dropoffDate ? "Select a drop-off date first" : "Min. 3h after pick-up time"}
+                />
+            </div>
         </div>
     );
 }
 
 // ── Step Indicator ──────────────────────────────────────────────────────────
 
-function StepIndicator({ current }: { current: Step }) {
+function StepIndicator({ current, skipFirstStep }: { current: Step; skipFirstStep?: boolean }) {
+    const visibleSteps = skipFirstStep ? STEPS.slice(1) : STEPS;
+    const stepOffset = skipFirstStep ? 1 : 0;
+
     return (
         <div className="flex w-full items-center">
-            {STEPS.map((step, i) => {
-                const idx = (i + 1) as Step;
+            {visibleSteps.map((step, i) => {
+                const idx = (i + 1 + stepOffset) as Step;
+                const displayNum = i + 1;
                 const isDone = current > idx;
                 const isActive = current === idx;
                 return (
@@ -99,7 +249,7 @@ function StepIndicator({ current }: { current: Step }) {
                                         <path d="m5 13 4 4L19 7" />
                                     </svg>
                                 ) : (
-                                    idx
+                                    displayNum
                                 )}
                             </div>
                             <div className="text-center">
@@ -117,8 +267,8 @@ function StepIndicator({ current }: { current: Step }) {
     );
 }
 
-export function BookingStepIndicator({ step }: { step: Step }) {
-    return <StepIndicator current={step} />;
+export function BookingStepIndicator({ step, skipFirstStep }: { step: Step; skipFirstStep?: boolean }) {
+    return <StepIndicator current={step} skipFirstStep={skipFirstStep} />;
 }
 
 function initWizard(): { step: Step; fromQuickBooking: boolean; data: BookingData } {
@@ -126,7 +276,7 @@ function initWizard(): { step: Step; fromQuickBooking: boolean; data: BookingDat
     return { step: 1, fromQuickBooking: false, data: EMPTY_BOOKING };
 }
 
-export function BookingWizard({ onStepChange, renderIndicator }: { onStepChange?: (s: number) => void; renderIndicator?: (step: Step) => React.ReactNode }) {
+export function BookingWizard({ onStepChange, renderIndicator }: { onStepChange?: (s: number) => void; renderIndicator?: (step: Step, skipFirstStep: boolean) => React.ReactNode }) {
     const [{ step, fromQuickBooking, data }, setWizardState] = useState(initWizard);
 
     const setStep = (s: Step) => {
@@ -291,23 +441,23 @@ export function BookingWizard({ onStepChange, renderIndicator }: { onStepChange?
 
     return (
         <div>
-            {renderIndicator?.(step)}
+            {renderIndicator?.(step, fromQuickBooking)}
             <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-8 sm:py-12">
-                {step === 1 && (
+                {step === 1 && !fromQuickBooking && (
                     <StepTrip data={data} onChange={handleChange} onNext={() => goTo(2)} priceBar={priceBarEl} />
                 )}
                 {step === 2 && (
                     <>
                         {fromQuickBooking && (
-                            <TripSummaryBar data={data} onEdit={() => { setFromQuickBooking(false); goTo(1); }} />
+                            <TripSummaryBar data={data} onChange={handleChange} />
                         )}
-                        <StepRoute data={data} onChange={handleChange} onNext={() => goTo(3)} onBack={() => goTo(1)} priceBar={priceBarEl} freeAddons={freeAddons} paidAddons={paidAddons} addonsLoading={addonsLoading} />
+                        <StepRoute data={data} onChange={handleChange} onNext={() => goTo(3)} onBack={fromQuickBooking ? undefined : () => goTo(1)} priceBar={priceBarEl} freeAddons={freeAddons} paidAddons={paidAddons} addonsLoading={addonsLoading} />
                     </>
                 )}
                 {step === 3 && (
                     <>
                         {fromQuickBooking && (
-                            <TripSummaryBar data={data} onEdit={() => { setFromQuickBooking(false); goTo(1); }} />
+                            <TripSummaryBar data={data} onChange={handleChange} />
                         )}
                         <StepConfirm
                             data={data}
