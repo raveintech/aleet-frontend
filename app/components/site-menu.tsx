@@ -169,7 +169,7 @@ export function SiteMenu({ items = defaultItems, className }: SiteMenuProps) {
 
             <div className="mt-auto pt-6 [@media(max-height:640px)]:pt-3">
               <Link
-                href="https://driver-aleet-frontend.vercel.app/"
+                href="https://portal.aleet.app"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex h-13 w-full items-center justify-center rounded-xl border border-white bg-white px-6 text-[16px] font-semibold text-[#050d0c] transition-opacity duration-200 hover:opacity-90 [@media(max-height:640px)]:h-10 [@media(max-height:640px)]:rounded-lg [@media(max-height:640px)]:text-[14px]"
