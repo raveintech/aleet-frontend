@@ -111,12 +111,12 @@ export function SiteMenu({ items = defaultItems, className }: SiteMenuProps) {
       </button>
 
       {isMounted ? (
-        <div className="fixed inset-0 z-50">
+        <div className="fixed inset-0" style={{ zIndex: 9999 }}>
           <button
             type="button"
             aria-label="Close menu overlay"
             className={cn(
-              "absolute inset-0 bg-[rgba(0,0,0,0.77)] transition-opacity duration-250",
+              "absolute inset-0 bg-[rgba(0,0,0,0.05)] backdrop-blur-xs transition-opacity duration-250",
               isVisible ? "opacity-100" : "opacity-0",
             )}
             onClick={closeMenu}
@@ -124,7 +124,7 @@ export function SiteMenu({ items = defaultItems, className }: SiteMenuProps) {
 
           <aside
             className={cn(
-              "relative z-10 flex h-full w-full max-w-120 flex-col bg-[rgba(5,10,9,0.92)] px-8 pt-8 pb-6 backdrop-blur-md transition-transform duration-250 ease-out [@media(max-height:640px)]:px-6 [@media(max-height:640px)]:pt-5 [@media(max-height:640px)]:pb-4",
+              "relative z-10 flex h-full w-full max-w-120 flex-col border-r border-[#bca066]/30 bg-[#050a09] px-8 pt-8 pb-6 transition-transform duration-250 ease-out [@media(max-height:640px)]:px-6 [@media(max-height:640px)]:pt-5 [@media(max-height:640px)]:pb-4",
               isVisible ? "translate-x-0" : "-translate-x-full",
             )}
           >
@@ -168,13 +168,15 @@ export function SiteMenu({ items = defaultItems, className }: SiteMenuProps) {
             </nav>
 
             <div className="mt-auto pt-6 [@media(max-height:640px)]:pt-3">
-              <button
-                type="button"
+              <Link
+                href="https://driver-aleet-frontend.vercel.app/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex h-13 w-full items-center justify-center rounded-xl border border-white bg-white px-6 text-[16px] font-semibold text-[#050d0c] transition-opacity duration-200 hover:opacity-90 [@media(max-height:640px)]:h-10 [@media(max-height:640px)]:rounded-lg [@media(max-height:640px)]:text-[14px]"
                 onClick={closeMenu}
               >
                 Become a driver
-              </button>
+              </Link>
             </div>
           </aside>
         </div>

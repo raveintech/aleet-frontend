@@ -39,6 +39,15 @@ export async function apiFetch<T = undefined>(
   const json: ApiResponse<T> = await res.json();
 
   if (!res.ok || !json.success) {
+    if (
+      res.status === 401 &&
+      typeof document !== "undefined" &&
+      !path.startsWith("/auth/")
+    ) {
+      // Token expired or invalid — clear it and redirect to login
+      document.cookie = "auth_token=; path=/; max-age=0";
+      window.location.href = "/login";
+    }
     throw new ApiError(res.status, json.message ?? "Unknown error");
   }
 

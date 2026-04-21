@@ -12,10 +12,10 @@ export function AuthMenu() {
         className={cn("justify-self-center inline-flex items-center gap-2 text-[#bca066] no-underline sm:gap-3.5")}
         aria-label="Aleet home"
       >
-        <span className="inline-flex h-[42px] w-[42px] items-center justify-center rounded-full border-4 border-[#bca066] font-serif text-[26px] leading-none font-semibold sm:h-[66px] sm:w-[66px] sm:border-[6px] sm:text-[44px]">
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border-[3px] border-[#bca066] font-serif text-[20px] leading-none font-semibold sm:h-10.5 sm:w-10.5 sm:border-4 sm:text-[26px]">
           A
         </span>
-        <span className="text-[40px] leading-none font-semibold tracking-[-0.02em] sm:text-[clamp(40px,4vw,70px)]">
+        <span className="text-[28px] leading-none font-semibold tracking-[-0.02em] sm:text-[36px]">
           Aleet
         </span>
       </Link>
