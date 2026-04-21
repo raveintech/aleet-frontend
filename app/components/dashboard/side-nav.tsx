@@ -69,7 +69,7 @@ export function SideNav({ initialActive = "dashboard" }: { initialActive?: strin
     };
 
     return (
-        <nav className="relative flex flex-col gap-1" aria-label="Dashboard navigation">
+        <nav className="relative flex flex-col gap-1 w-full min-w-0" aria-label="Dashboard navigation">
             {/* Sliding indicator */}
             {indicatorStyle && (
                 <div
@@ -94,12 +94,12 @@ export function SideNav({ initialActive = "dashboard" }: { initialActive?: strin
                         type="button"
                         onClick={() => handleSelect(key)}
                         className={cn(
-                            "relative inline-flex w-full flex-col items-center cursor-pointer justify-center gap-1 rounded-xl px-1.5 py-3 text-center transition-colors duration-200 aspect-square",
+                            "relative inline-flex w-full flex-col items-center cursor-pointer justify-center gap-1 rounded-xl px-1.5 py-2 text-center transition-colors duration-200 lg:aspect-square",
                             isActive ? "text-[#bca066]" : "text-[#5a6a6b] hover:text-white/70",
                         )}
                     >
                         <Icon className="h-5 w-5 shrink-0" />
-                        <span className="text-[11px] leading-tight font-medium">{label}</span>
+                        <span className="text-[11px] leading-tight font-medium w-full truncate">{label}</span>
                     </button>
                 );
             })}

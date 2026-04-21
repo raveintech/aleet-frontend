@@ -154,12 +154,12 @@ export default function BillingPage() {
             <main className="mx-auto mt-8 w-full px-5 sm:px-10">
                 <section className="grid gap-4 lg:grid-cols-[92px_1fr]">
                     {/* Sidebar */}
-                    <aside className="rounded-xl border border-[#1e2b2c] bg-[rgba(8,19,18,0.62)] p-1.5">
+                    <aside className="overflow-hidden rounded-xl border border-[#1e2b2c] bg-[rgba(8,19,18,0.62)] p-1.5">
                         <SideNav initialActive="payments" />
                     </aside>
 
                     {/* Content */}
-                    <div className="space-y-6">
+                    <div className="min-w-0 space-y-6">
 
                         {/* Page title */}
                         <div>
@@ -240,15 +240,15 @@ export default function BillingPage() {
                                 <div className="space-y-1">
                                     <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-2">Pending Charges</p>
                                     {MOCK_PENDING_CHARGES.map((charge) => (
-                                        <div key={charge._id} className="flex items-center justify-between rounded-xl border border-[#1e2b2c] bg-[#0a1513] px-4 py-3">
-                                            <div className="space-y-0.5">
-                                                <p className="text-sm font-medium text-white">{charge.name}</p>
+                                        <div key={charge._id} className="flex items-center justify-between gap-3 rounded-xl border border-[#1e2b2c] bg-[#0a1513] px-4 py-3">
+                                            <div className="min-w-0 space-y-0.5">
+                                                <p className="truncate text-sm font-medium text-white">{charge.name}</p>
                                                 <div className="flex items-center gap-1.5">
                                                     <ChargeBadge type={charge.type} />
                                                     <span className="text-[11px] text-white/30">Due {charge.dueDate}</span>
                                                 </div>
                                             </div>
-                                            <p className="text-base font-semibold text-white">${charge.amount.toFixed(2)}</p>
+                                            <p className="shrink-0 text-base font-semibold text-white">${charge.amount.toFixed(2)}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -287,10 +287,10 @@ export default function BillingPage() {
 
                                 <div className="space-y-2">
                                     {paymentMethods.map((pm) => (
-                                        <div key={pm._id} className="flex items-center justify-between rounded-xl border border-[#1e2b2c] bg-[#0a1513] px-4 py-3">
-                                            <div>
+                                        <div key={pm._id} className="flex items-center justify-between gap-3 rounded-xl border border-[#1e2b2c] bg-[#0a1513] px-4 py-3">
+                                            <div className="min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <p className="text-sm text-white">
+                                                    <p className="truncate text-sm text-white">
                                                         <CardBrand type={pm.type} /> &bull;&bull;&bull;&bull; {pm.last4}
                                                     </p>
                                                     {pm.isDefault && (
@@ -303,7 +303,7 @@ export default function BillingPage() {
                                                     <p className="mt-0.5 text-[11px] text-white/30">Expires {pm.expires}</p>
                                                 )}
                                             </div>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex shrink-0 items-center gap-2">
                                                 {!pm.isDefault && (
                                                     <button type="button" className="cursor-pointer text-[11px] text-white/30 hover:text-white/60 transition-colors">
                                                         Set Default
@@ -331,51 +331,55 @@ export default function BillingPage() {
                         </div>
 
                         {/* ── Invoice History ── */}
-                        <div className="rounded-2xl border border-[#1e2b2c] bg-[rgba(6,17,16,0.7)] overflow-hidden">
+                        <div className="overflow-hidden rounded-2xl border border-[#1e2b2c] bg-[rgba(6,17,16,0.7)]">
                             <div className="px-5 pt-5 pb-3">
                                 <h2 className="text-base font-semibold text-white">Invoice History</h2>
                                 <p className="text-xs text-white/40">View and download your past invoices</p>
                             </div>
 
-                            {/* Table header */}
-                            <div className="grid grid-cols-[1fr_120px_100px_80px_110px] bg-[#0c1a18] px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-white/40">
-                                <span>Invoice</span>
-                                <span>Date</span>
-                                <span>Amount</span>
-                                <span>Status</span>
-                                <span>Actions</span>
-                            </div>
-
-                            {MOCK_INVOICES.map((inv, i) => (
-                                <div
-                                    key={inv._id}
-                                    className={cn(
-                                        "grid grid-cols-[1fr_120px_100px_80px_110px] items-center px-5 py-4",
-                                        i !== MOCK_INVOICES.length - 1 && "border-b border-[#1e2b2c]",
-                                    )}
-                                >
-                                    <div>
-                                        <p className="text-sm font-semibold text-white">{inv.number}</p>
-                                        <p className="text-[11px] text-white/40">{inv.description}</p>
+                            <div className="overflow-x-auto">
+                                <div className="min-w-[610px]">
+                                    {/* Table header */}
+                                    <div className="grid grid-cols-[1fr_120px_100px_80px_110px] bg-[#0c1a18] px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-white/40">
+                                        <span>Invoice</span>
+                                        <span>Date</span>
+                                        <span>Amount</span>
+                                        <span>Status</span>
+                                        <span>Actions</span>
                                     </div>
-                                    <span className="text-sm text-white/60">{inv.date}</span>
-                                    <span className="text-sm text-white/80">
-                                        {inv.amount > 0 ? `$${inv.amount.toFixed(2)}` : "Free"}
-                                    </span>
-                                    <StatusBadge status={inv.status} />
-                                    <button
-                                        type="button"
-                                        className="inline-flex cursor-pointer items-center gap-1.5 text-[12px] font-medium text-[#bca066] hover:opacity-75 transition-opacity"
-                                    >
-                                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                            <polyline points="7 10 12 15 17 10" />
-                                            <line x1="12" y1="15" x2="12" y2="3" />
-                                        </svg>
-                                        Download
-                                    </button>
+
+                                    {MOCK_INVOICES.map((inv, i) => (
+                                        <div
+                                            key={inv._id}
+                                            className={cn(
+                                                "grid grid-cols-[1fr_120px_100px_80px_110px] items-center px-5 py-4",
+                                                i !== MOCK_INVOICES.length - 1 && "border-b border-[#1e2b2c]",
+                                            )}
+                                        >
+                                            <div>
+                                                <p className="text-sm font-semibold text-white">{inv.number}</p>
+                                                <p className="text-[11px] text-white/40">{inv.description}</p>
+                                            </div>
+                                            <span className="text-sm text-white/60">{inv.date}</span>
+                                            <span className="text-sm text-white/80">
+                                                {inv.amount > 0 ? `$${inv.amount.toFixed(2)}` : "Free"}
+                                            </span>
+                                            <StatusBadge status={inv.status} />
+                                            <button
+                                                type="button"
+                                                className="inline-flex cursor-pointer items-center gap-1.5 text-[12px] font-medium text-[#bca066] transition-opacity hover:opacity-75"
+                                            >
+                                                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                                    <polyline points="7 10 12 15 17 10" />
+                                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                                </svg>
+                                                Download
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
+                            </div>
                         </div>
 
                         {/* ── Trip Management ── */}
@@ -450,12 +454,12 @@ export default function BillingPage() {
 
                             <div className="space-y-4">
                                 {notifPrefs.map((pref) => (
-                                    <div key={pref.key} className="flex items-center justify-between gap-4">
-                                        <div>
+                                    <div key={pref.key} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                                        <div className="min-w-0">
                                             <p className="text-sm font-medium text-white">{pref.label}</p>
                                             <p className="text-[11px] text-white/40">{pref.description}</p>
                                         </div>
-                                        <div className="flex items-center gap-3 shrink-0">
+                                        <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-normal">
                                             {/* Email */}
                                             <div className="flex items-center gap-1.5">
                                                 <svg className="h-4 w-4 text-white/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

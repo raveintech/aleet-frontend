@@ -102,12 +102,12 @@ export default function SubscriptionPage() {
             <main className="mx-auto mt-8 w-full px-5 sm:px-10">
                 <section className="grid gap-4 lg:grid-cols-[92px_1fr]">
                     {/* Sidebar */}
-                    <aside className="rounded-xl border border-[#1e2b2c] bg-[rgba(8,19,18,0.62)] p-1.5">
+                    <aside className="overflow-hidden rounded-xl border border-[#1e2b2c] bg-[rgba(8,19,18,0.62)] p-1.5">
                         <SideNav initialActive="subscription" />
                     </aside>
 
                     {/* Content */}
-                    <div className="space-y-6">
+                    <div className="min-w-0 space-y-6">
 
                         {/* Page title */}
                         <div>
@@ -142,7 +142,7 @@ export default function SubscriptionPage() {
                                         </ul>
                                     </div>
 
-                                    <div className="mt-6 flex items-center gap-3">
+                                    <div className="mt-6 flex flex-wrap items-center gap-3">
                                         <button
                                             type="button"
                                             className="cursor-pointer rounded-xl bg-[#0a0a0a] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-80"
@@ -166,16 +166,16 @@ export default function SubscriptionPage() {
                                     {SAVINGS_BREAKDOWN.map((item) => (
                                         <div
                                             key={item.vehicle}
-                                            className="flex items-center justify-between rounded-2xl border border-[#1e2b2c] bg-[#0a1513] px-5 py-4"
+                                            className="flex items-center justify-between gap-3 rounded-2xl border border-[#1e2b2c] bg-[#0a1513] px-5 py-4"
                                         >
-                                            <div>
+                                            <div className="min-w-0">
                                                 <p className="text-sm font-semibold text-white">{item.vehicle}</p>
                                                 <div className="mt-0.5 flex items-center gap-2">
                                                     <span className="text-sm text-white/30 line-through">${item.regularPrice}/hr</span>
                                                     <span className="text-sm font-semibold text-[#bca066]">${item.memberPrice}/hr</span>
                                                 </div>
                                             </div>
-                                            <span className="rounded-full border border-[#1e2b2c] bg-[#0c1211] px-3 py-1 text-xs font-semibold text-white/70">
+                                            <span className="shrink-0 rounded-full border border-[#1e2b2c] bg-[#0c1211] px-3 py-1 text-xs font-semibold text-white/70">
                                                 Save ${item.savings}/hr
                                             </span>
                                         </div>

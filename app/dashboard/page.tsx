@@ -54,11 +54,11 @@ export default function DashboardPage() {
 
       <main className="mx-auto mt-8 w-full px-5 sm:px-10">
         <section className="grid gap-4 lg:grid-cols-[92px_1fr]">
-          <aside className="rounded-xl border border-[#1e2b2c] bg-[rgba(8,19,18,0.62)] p-1.5">
+          <aside className="overflow-hidden rounded-xl border border-[#1e2b2c] bg-[rgba(8,19,18,0.62)] p-1.5">
             <SideNav />
           </aside>
 
-          <section className="space-y-4">
+          <section className="min-w-0 space-y-4">
             <article className="flex flex-col gap-5 rounded-2xl border border-[#1e2b2c] bg-[rgba(8,19,18,0.62)] px-6 py-7 sm:flex-row sm:items-center sm:justify-between sm:px-8">
               <div>
                 <h1 className="text-3xl leading-[1.1] font-medium text-white sm:text-4xl">
@@ -108,4 +108,3 @@ function StatCard({
     </article>
   );
 }
-

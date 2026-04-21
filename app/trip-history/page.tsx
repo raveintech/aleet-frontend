@@ -263,11 +263,11 @@ export default function TripHistoryPage() {
 
             <main className="mx-auto mt-8 w-full px-5 sm:px-10">
                 <section className="grid gap-4 lg:grid-cols-[92px_1fr]">
-                    <aside className="rounded-xl border border-[#1e2b2c] bg-[rgba(8,19,18,0.62)] p-1.5">
+                    <aside className="overflow-hidden rounded-xl border border-[#1e2b2c] bg-[rgba(8,19,18,0.62)] p-1.5">
                         <SideNav initialActive="history" />
                     </aside>
 
-                    <section className="space-y-4">
+                    <section className="min-w-0 space-y-4">
                         {/* Page title */}
                         <div className="flex items-center justify-between">
                             <div>
@@ -277,36 +277,38 @@ export default function TripHistoryPage() {
                         </div>
 
                         {/* Filter tabs */}
-                        <div className="flex gap-1 rounded-xl border border-[#1e2a2c] bg-[#0c1211] p-1">
-                            {statuses.map((s) => (
-                                <button
-                                    key={s}
-                                    type="button"
-                                    onClick={() => setFilter(s)}
-                                    className={cn(
-                                        "flex flex-1 items-center justify-center cursor-pointer rounded-lg px-3 py-2 text-[12px] font-semibold capitalize transition-colors duration-150",
-                                        filter === s ? "bg-[#1e2a2c] text-white" : "text-white/40 hover:text-white/70",
-                                    )}
-                                >
-                                    {s}
-                                    {bookings && s !== "all" && (
-                                        <span className={cn(
-                                            "ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold",
-                                            filter === s ? "bg-[#bca066]/20 text-[#bca066]" : "bg-white/5 text-white/30",
-                                        )}>
-                                            {bookings.filter((b) => b.status === s).length}
-                                        </span>
-                                    )}
-                                    {bookings && s === "all" && (
-                                        <span className={cn(
-                                            "ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold",
-                                            filter === s ? "bg-[#bca066]/20 text-[#bca066]" : "bg-white/5 text-white/30",
-                                        )}>
-                                            {bookings.length}
-                                        </span>
-                                    )}
-                                </button>
-                            ))}
+                        <div className="overflow-x-auto rounded-xl border border-[#1e2a2c] bg-[#0c1211] p-1">
+                            <div className="flex min-w-max gap-1">
+                                {statuses.map((s) => (
+                                    <button
+                                        key={s}
+                                        type="button"
+                                        onClick={() => setFilter(s)}
+                                        className={cn(
+                                            "flex shrink-0 items-center justify-center rounded-lg px-3 py-2 text-[12px] font-semibold capitalize whitespace-nowrap transition-colors duration-150",
+                                            filter === s ? "bg-[#1e2a2c] text-white" : "text-white/40 hover:text-white/70",
+                                        )}
+                                    >
+                                        {s}
+                                        {bookings && s !== "all" && (
+                                            <span className={cn(
+                                                "ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold",
+                                                filter === s ? "bg-[#bca066]/20 text-[#bca066]" : "bg-white/5 text-white/30",
+                                            )}>
+                                                {bookings.filter((b) => b.status === s).length}
+                                            </span>
+                                        )}
+                                        {bookings && s === "all" && (
+                                            <span className={cn(
+                                                "ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold",
+                                                filter === s ? "bg-[#bca066]/20 text-[#bca066]" : "bg-white/5 text-white/30",
+                                            )}>
+                                                {bookings.length}
+                                            </span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         {/* Content */}
