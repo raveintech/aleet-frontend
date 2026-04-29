@@ -21,7 +21,7 @@ export type CheckUserData = {
 export function checkUserExists(identifier: string) {
   return apiFetch<CheckUserData>("/auth/check-user", {
     method: "POST",
-    body: { identifier },
+    body: { identifier, role: "customer" },
   });
 }
 
@@ -31,6 +31,7 @@ export function checkUserExists(identifier: string) {
 export type LoginPayload = {
   identifier: string;
   password: string;
+  expectedRole: "customer" | "driver";
 };
 
 export type LoginData = {
@@ -50,6 +51,7 @@ export function login(payload: LoginPayload) {
 
 export type SignupStartPayload = {
   identifier: string;
+  role: "customer" | "driver";
 };
 
 export type SignupStartData = {
@@ -128,6 +130,7 @@ export function signupComplete(payload: SignupCompletePayload) {
 export type ForgotPasswordPayload = {
   email: string;
   resetBaseUrl?: string;
+  role: "customer" | "driver";
 };
 
 export function forgotPassword(payload: ForgotPasswordPayload) {

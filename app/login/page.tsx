@@ -87,7 +87,7 @@ function AuthFlow() {
           setEmailForComplete(value);
           setStep("phone");
         } else {
-          await signupStart({ identifier: value });
+          await signupStart({ identifier: value, role: "customer" });
           toast.success("Verification code sent!");
           setStep("otp");
         }
@@ -104,7 +104,7 @@ function AuthFlow() {
     setIsLoading(true);
     try {
       setIdentifier(phone);
-      await signupStart({ identifier: phone });
+      await signupStart({ identifier: phone, role: "customer" });
       toast.success("Verification code sent!");
       setStep("otp");
     } catch (err) {
@@ -118,7 +118,7 @@ function AuthFlow() {
   const handlePassword = async (password: string) => {
     setIsLoading(true);
     try {
-      const res = await login({ identifier, password });
+      const res = await login({ identifier, password, expectedRole: "customer" });
       setToken(res.data!.token);
       toast.success(res.message);
       router.push(searchParams.get("next") ?? "/dashboard");

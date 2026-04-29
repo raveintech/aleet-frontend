@@ -110,6 +110,7 @@ function ForgotStep({ onSuccess }: { onSuccess: () => void }) {
       const res = await forgotPassword({
         email,
         resetBaseUrl: `${window.location.origin}/login/forgot-password`,
+        role: "customer",
       });
       toast.success(res.message);
       onSuccess();
