@@ -10,6 +10,7 @@ export type PlaceValue = {
 };
 
 export type BookingData = {
+  bookingMode: "buy_hours" | "multi_day";
   // Step 1
   pickupDate: Date | undefined;
   pickupTime: string;
@@ -32,6 +33,7 @@ export type BookingData = {
 };
 
 export const EMPTY_BOOKING: BookingData = {
+  bookingMode: "multi_day",
   pickupDate: undefined,
   pickupTime: "",
   dropoffDate: undefined,

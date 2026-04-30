@@ -22,6 +22,7 @@ import {
     isPickupTimeDisabled,
     isDropoffTimeDisabled,
     slotFromTimeStr,
+    combineDateAndTime,
 } from "@/lib/booking-constraints";
 import { loadPendingBooking, clearPendingBooking } from "@/lib/pending-booking";
 
@@ -34,7 +35,15 @@ const STEPS: { label: string; sub: string }[] = [
 ];
 // ── Trip Summary Bar ────────────────────────────────────────────────────────
 
-function TripSummaryBar({ data, onChange }: { data: BookingData; onChange: (patch: Partial<BookingData>) => void }) {
+function TripSummaryBar({
+    data,
+    onChange,
+    quickBookingMode,
+}: {
+    data: BookingData;
+    onChange: (patch: Partial<BookingData>) => void;
+    quickBookingMode: "buy_hours" | "multi_day" | null;
+}) {
     const [editing, setEditing] = useState(false);
     const [vehicleOptions, setVehicleOptions] = useState<SelectOption[]>([]);
     const [regionOptions, setRegionOptions] = useState<SelectOption[]>([]);
@@ -59,6 +68,7 @@ function TripSummaryBar({ data, onChange }: { data: BookingData; onChange: (patc
     }, []);
 
     const hasFullData = data.pickupDate && data.pickupTime && data.dropoffDate && data.dropoffTime;
+    const isBuyHours = quickBookingMode === "buy_hours";
 
     const fmt = (d: Date) => format(d, "MMM d, yyyy");
 
@@ -107,10 +117,40 @@ function TripSummaryBar({ data, onChange }: { data: BookingData; onChange: (patc
         onChange(patch);
     }
 
+    function getDurationHours(): number | null {
+        if (!data.pickupDate || !data.pickupTime || !data.dropoffDate || !data.dropoffTime) return null;
+        const start = combineDateAndTime(data.pickupDate, data.pickupTime);
+        const end = combineDateAndTime(data.dropoffDate, data.dropoffTime);
+        if (!start || !end) return null;
+        const diff = (end.getTime() - start.getTime()) / 3_600_000;
+        if (diff <= 0) return null;
+        return Math.round(diff * 100) / 100;
+    }
+
+    function formatTimeFromDate(date: Date): string {
+        const h24 = date.getHours();
+        const m = String(date.getMinutes()).padStart(2, "0");
+        const period = h24 >= 12 ? "PM" : "AM";
+        const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+        return `${String(h12).padStart(2, "0")}:${m} ${period}`;
+    }
+
+    function handleDurationChange(nextDuration: number) {
+        if (!data.pickupDate || !data.pickupTime) return;
+        const start = combineDateAndTime(data.pickupDate, data.pickupTime);
+        if (!start) return;
+        const end = new Date(start.getTime() + nextDuration * 3_600_000);
+        onChange({
+            dropoffDate: end,
+            dropoffTime: formatTimeFromDate(end),
+        });
+    }
+
     if (!editing && hasFullData) {
         const items = [
             { label: "Pick-up", value: `${fmt(data.pickupDate!)} · ${data.pickupTime}` },
             { label: "Drop-off", value: `${fmt(data.dropoffDate!)} · ${data.dropoffTime}` },
+            ...(isBuyHours && getDurationHours() ? [{ label: "Duration", value: `${getDurationHours()}h` }] : []),
             ...(data.vehicleType ? [{ label: "Vehicle", value: data.vehicleType }] : []),
             ...(data.region ? [{ label: "Region", value: data.region }] : []),
             ...(data.quantity > 1 ? [{ label: "Qty", value: String(data.quantity) }] : []),
@@ -190,21 +230,52 @@ function TripSummaryBar({ data, onChange }: { data: BookingData; onChange: (patc
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <DatePicker
-                    label="Drop-off Date"
-                    value={data.dropoffDate}
-                    onChange={handleDropoffDateChange}
-                    minDate={data.pickupDate}
-                />
-                <TimePicker
-                    label="Drop-off Time"
-                    value={data.dropoffTime}
-                    onChange={(t) => onChange({ dropoffTime: t })}
-                    disableSlot={(slot) =>
-                        isDropoffTimeDisabled(data.pickupDate, data.pickupTime, data.dropoffDate, slot)
-                    }
-                    disabledMessage={!data.dropoffDate ? "Select a drop-off date first" : "Min. 3h after pick-up time"}
-                />
+                {isBuyHours ? (
+                    <div>
+                        <p className="mb-1.5 text-[12px] font-semibold uppercase tracking-widest text-[#7a8a9a]">Duration</p>
+                        <div className="flex h-11 items-center justify-between rounded-lg border border-[#2e3638] bg-[#1e2527] px-2.5 sm:h-12">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const current = getDurationHours() ?? 1;
+                                    handleDurationChange(Math.max(1, current - 1));
+                                }}
+                                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-white/70 transition-colors hover:bg-[#2a3336] hover:text-white"
+                            >
+                                −
+                            </button>
+                            <span className="text-[13px] font-medium text-white">{getDurationHours() ?? 1}h</span>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const current = getDurationHours() ?? 1;
+                                    handleDurationChange(Math.min(24, current + 1));
+                                }}
+                                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-white/70 transition-colors hover:bg-[#2a3336] hover:text-white"
+                            >
+                                +
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        <DatePicker
+                            label="Drop-off Date"
+                            value={data.dropoffDate}
+                            onChange={handleDropoffDateChange}
+                            minDate={data.pickupDate}
+                        />
+                        <TimePicker
+                            label="Drop-off Time"
+                            value={data.dropoffTime}
+                            onChange={(t) => onChange({ dropoffTime: t })}
+                            disableSlot={(slot) =>
+                                isDropoffTimeDisabled(data.pickupDate, data.pickupTime, data.dropoffDate, slot)
+                            }
+                            disabledMessage={!data.dropoffDate ? "Select a drop-off date first" : "Min. 3h after pick-up time"}
+                        />
+                    </>
+                )}
             </div>
         </div>
     );
@@ -271,19 +342,18 @@ export function BookingStepIndicator({ step, skipFirstStep }: { step: Step; skip
     return <StepIndicator current={step} skipFirstStep={skipFirstStep} />;
 }
 
-function initWizard(): { step: Step; fromQuickBooking: boolean; data: BookingData } {
+function initWizard(): { step: Step; fromQuickBooking: boolean; quickBookingMode: "buy_hours" | "multi_day" | null; data: BookingData } {
     // Always start at step 1 on SSR — client-side effect will adjust
-    return { step: 1, fromQuickBooking: false, data: EMPTY_BOOKING };
+    return { step: 1, fromQuickBooking: false, quickBookingMode: null, data: EMPTY_BOOKING };
 }
 
 export function BookingWizard({ onStepChange, renderIndicator }: { onStepChange?: (s: number) => void; renderIndicator?: (step: Step, skipFirstStep: boolean) => React.ReactNode }) {
-    const [{ step, fromQuickBooking, data }, setWizardState] = useState(initWizard);
+    const [{ step, fromQuickBooking, quickBookingMode, data }, setWizardState] = useState(initWizard);
 
     const setStep = (s: Step) => {
         setWizardState((prev) => ({ ...prev, step: s }));
         onStepChange?.(s);
     };
-    const setFromQuickBooking = (v: boolean) => setWizardState((prev) => ({ ...prev, fromQuickBooking: v }));
     const setData = (updater: (prev: BookingData) => BookingData) =>
         setWizardState((prev) => ({ ...prev, data: updater(prev.data) }));
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -303,6 +373,11 @@ export function BookingWizard({ onStepChange, renderIndicator }: { onStepChange?
             return;
         }
         clearPendingBooking();
+        const normalizedMode: "buy_hours" | "multi_day" =
+            pending.bookingMode === "buy_hours" || pending.bookingMode === "buy-hours"
+                ? "buy_hours"
+                : "multi_day";
+
         const loaded: BookingData = {
             ...EMPTY_BOOKING,
             pickupDate: pending.pickupDate ? new Date(pending.pickupDate) : undefined,
@@ -314,6 +389,11 @@ export function BookingWizard({ onStepChange, renderIndicator }: { onStepChange?
             vehicleHourlyRate: pending.vehicleHourlyRate,
             region: pending.region,
             regionId: pending.regionId,
+            bookingMode: normalizedMode,
+            dropoffAddress: {
+                text: pending.dropoffLocationText ?? "",
+                placeId: pending.dropoffLocationPlaceId ?? "",
+            },
         };
         const hasTripData = !!(
             loaded.pickupDate && loaded.pickupTime &&
@@ -321,10 +401,19 @@ export function BookingWizard({ onStepChange, renderIndicator }: { onStepChange?
             loaded.vehicleTypeId
         );
         if (hasTripData) {
-            setWizardState({ step: 2, fromQuickBooking: true, data: loaded });
+            setWizardState({
+                step: 2,
+                fromQuickBooking: true,
+                quickBookingMode: normalizedMode,
+                data: loaded,
+            });
             onStepChange?.(2);
         } else {
-            setWizardState((prev) => ({ ...prev, data: loaded }));
+            setWizardState((prev) => ({
+                ...prev,
+                quickBookingMode: normalizedMode,
+                data: loaded,
+            }));
             onStepChange?.(1);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -449,15 +538,15 @@ export function BookingWizard({ onStepChange, renderIndicator }: { onStepChange?
                 {step === 2 && (
                     <>
                         {fromQuickBooking && (
-                            <TripSummaryBar data={data} onChange={handleChange} />
+                            <TripSummaryBar data={data} onChange={handleChange} quickBookingMode={quickBookingMode} />
                         )}
-                        <StepRoute data={data} onChange={handleChange} onNext={() => goTo(3)} onBack={fromQuickBooking ? undefined : () => goTo(1)} priceBar={priceBarEl} freeAddons={freeAddons} paidAddons={paidAddons} addonsLoading={addonsLoading} />
+                        <StepRoute data={data} quickBookingMode={quickBookingMode} onChange={handleChange} onNext={() => goTo(3)} onBack={fromQuickBooking ? undefined : () => goTo(1)} priceBar={priceBarEl} freeAddons={freeAddons} paidAddons={paidAddons} addonsLoading={addonsLoading} />
                     </>
                 )}
                 {step === 3 && (
                     <>
                         {fromQuickBooking && (
-                            <TripSummaryBar data={data} onChange={handleChange} />
+                            <TripSummaryBar data={data} onChange={handleChange} quickBookingMode={quickBookingMode} />
                         )}
                         <StepConfirm
                             data={data}

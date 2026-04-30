@@ -109,20 +109,42 @@ function serializeBookingData(data: BookingData) {
   const endDate = data.dropoffDate
     ? buildDateTime(data.dropoffDate, effectiveDropoffTime)
     : undefined;
+  const bookingMode = data.bookingMode ?? "multi_day";
 
-  return {
+  let durationHours: number | undefined;
+  if (bookingMode === "buy_hours" && data.pickupDate && data.pickupTime && data.dropoffDate) {
+    const start = moment(buildDateTime(data.pickupDate, data.pickupTime));
+    const end = moment(buildDateTime(data.dropoffDate, effectiveDropoffTime));
+    const diff = end.diff(start, "minutes") / 60;
+    if (diff > 0) durationHours = Number(diff.toFixed(2));
+  }
+
+  const basePayload = {
+    bookingMode,
     region: data.regionId || data.region,
     startDate,
-    endDate,
     vehicleTypeId: data.vehicleTypeId,
     quantity: data.quantity,
     pickupLocation: data.pickupAddress.text || data.pickupAddress.placeId,
     dropoffLocation: data.dropoffAddress.text || data.dropoffAddress.placeId,
+    addOns: data.selectedAddons,
+  };
+
+  if (bookingMode === "buy_hours") {
+    return {
+      ...basePayload,
+      durationHours,
+      state: data.region,
+    };
+  }
+
+  return {
+    ...basePayload,
+    endDate,
     freeRouting: data.freeRouting,
     stops: data.stops
       .filter((s) => s.address.text)
       .map((s) => ({ location: s.address.text })),
-    addOns: data.selectedAddons,
   };
 }
 

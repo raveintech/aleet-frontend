@@ -11,6 +11,9 @@ export type PendingBooking = {
   vehicleHourlyRate: number;
   region: string;
   regionId: string;
+  bookingMode?: "buy_hours" | "multi_day" | "buy-hours" | "multi-day";
+  dropoffLocationText?: string;
+  dropoffLocationPlaceId?: string;
   _savedAt: number;
 };
 

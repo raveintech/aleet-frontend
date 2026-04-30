@@ -31,16 +31,18 @@ export default function HomePage() {
               Receive a huge % off every ride, every time. Aleet Access gives you exclusive low
               rates across all vehicle types — book premium for less
             </p>
-            <Button className="mx-auto max-w-48 mt-4 h-11 w-auto px-6 text-[14px] sm:mt-6 sm:h-12.5 sm:px-8 sm:text-[16px]">
+            <Button className="mx-auto max-w-48 mt-4 mb-2 h-11 w-auto px-6 text-[14px] sm:mt-6 sm:mb-3 sm:h-12.5 sm:px-8 sm:text-[16px]">
               Membership
             </Button>
           </section>
 
           <div className="mt-8 w-full sm:mt-4 2xl:mt-auto">
             <div className="mx-auto w-full max-w-295">
-              <BookingForm />
+              <div className="relative z-30">
+                <BookingForm />
+              </div>
 
-              <section className="mt-3 grid grid-cols-3 gap-2 sm:mt-4 sm:gap-4">
+              <section className="relative z-10 mt-3 grid grid-cols-3 gap-2 sm:mt-4 sm:gap-4">
                 <FeatureCard
                   title="Instant Pay Out"
                   text="Get paid faster on every completed trip"
@@ -89,4 +91,3 @@ function FeatureCard({
     </article>
   );
 }
-

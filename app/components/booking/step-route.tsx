@@ -1,13 +1,14 @@
 "use client";
 
 import { Plus, Trash2, Navigation, Check } from "lucide-react";
-import { useState, useEffect } from "react";
-import { Button, Toggle, AddressAutocomplete } from "@/app/components/ui";
+import { useState } from "react";
+import { Button, Toggle, AddressAutocomplete, toast } from "@/app/components/ui";
 import type { BookingData } from "./booking-types";
 import type { ApiAddon } from "@/lib/api/addons";
 
 type Props = {
     data: BookingData;
+    quickBookingMode: "buy_hours" | "multi_day" | null;
     onChange: (patch: Partial<BookingData>) => void;
     onNext: () => void;
     onBack?: () => void;
@@ -21,17 +22,8 @@ function nanoid() {
     return Math.random().toString(36).slice(2, 500);
 }
 
-export function StepRoute({ data, onChange, onNext, onBack, priceBar, freeAddons, paidAddons, addonsLoading }: Props) {
-    const [localFreeAddons, setLocalFreeAddons] = useState<ApiAddon[]>(freeAddons);
-    const [localPaidAddons, setLocalPaidAddons] = useState<ApiAddon[]>(paidAddons);
-    const [localAddonsLoading, setLocalAddonsLoading] = useState(addonsLoading);
-
-    // Sync from wizard-level props (preferred), but keep local fetch as fallback
-    useEffect(() => {
-        setLocalFreeAddons(freeAddons);
-        setLocalPaidAddons(paidAddons);
-        setLocalAddonsLoading(addonsLoading);
-    }, [freeAddons, paidAddons, addonsLoading]);
+export function StepRoute({ data, quickBookingMode, onChange, onNext, onBack, priceBar, freeAddons, paidAddons, addonsLoading }: Props) {
+    const [isLocating, setIsLocating] = useState(false);
 
     function addStop() {
         onChange({ stops: [...data.stops, { id: nanoid(), address: { text: "", placeId: "" } }] });
@@ -54,12 +46,100 @@ export function StepRoute({ data, onChange, onNext, onBack, priceBar, freeAddons
         });
     }
 
+    function handleUseCurrentLocation() {
+        if (isLocating) return;
+        if (typeof navigator === "undefined" || !navigator.geolocation) {
+            toast.error("Geolocation is not supported by this browser.");
+            return;
+        }
+
+        setIsLocating(true);
+
+        const applyCoords = (latitude: number, longitude: number) => {
+            const fallbackText = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+            onChange({
+                pickupAddress: {
+                    text: fallbackText,
+                    placeId: "",
+                },
+            });
+
+            if (typeof google === "undefined" || !google.maps?.Geocoder) {
+                toast.warning("Using coordinates as pickup location.");
+                setIsLocating(false);
+                return;
+            }
+
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ location: { lat: latitude, lng: longitude } }, (results, status) => {
+                if (status === "OK" && results && results[0]) {
+                    onChange({
+                        pickupAddress: {
+                            text: results[0].formatted_address,
+                            placeId: results[0].place_id ?? "",
+                        },
+                    });
+                    toast.success("Current location applied.");
+                } else {
+                    toast.warning("Address lookup failed. Coordinates were used instead.");
+                }
+                setIsLocating(false);
+            });
+        };
+
+        const handleGeoError = (error: GeolocationPositionError) => {
+            // Safari/iOS can transiently throw POSITION_UNAVAILABLE (kCLErrorLocationUnknown).
+            // Retry once with relaxed options to recover without user action.
+            if (error.code === error.POSITION_UNAVAILABLE) {
+                navigator.geolocation.getCurrentPosition(
+                    (retryPosition) => {
+                        applyCoords(retryPosition.coords.latitude, retryPosition.coords.longitude);
+                    },
+                    (retryError) => {
+                        setIsLocating(false);
+                        if (retryError.code === retryError.PERMISSION_DENIED) {
+                            toast.error("Location access was denied. Please enter pickup address manually.");
+                            return;
+                        }
+                        if (retryError.code === retryError.TIMEOUT) {
+                            toast.error("Location request timed out. Please try again.");
+                            return;
+                        }
+                        toast.error("Location unavailable right now. Please try again in a moment.");
+                    },
+                    { enableHighAccuracy: false, timeout: 8000, maximumAge: 120000 },
+                );
+                return;
+            }
+
+            setIsLocating(false);
+            if (error.code === error.PERMISSION_DENIED) {
+                toast.error("Location access was denied. Please enter pickup address manually.");
+                return;
+            }
+            if (error.code === error.TIMEOUT) {
+                toast.error("Location request timed out. Please try again.");
+                return;
+            }
+            toast.error("Could not determine current location.");
+        };
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => applyCoords(position.coords.latitude, position.coords.longitude),
+            handleGeoError,
+            { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 },
+        );
+    }
+
     const addonTotal = data.selectedAddons.reduce((sum, id) => {
-        const addon = localPaidAddons.find((a) => a._id === id);
+        const addon = paidAddons.find((a) => a._id === id);
         return sum + (addon?.price ?? 0);
     }, 0);
 
-    const isValid = !!data.pickupAddress.text && (data.freeRouting || !!data.dropoffAddress.text);
+    const isBuyHours = quickBookingMode === "buy_hours";
+    const isValid = isBuyHours
+        ? !!data.pickupAddress.text && !!data.dropoffAddress.text
+        : !!data.pickupAddress.text && (data.freeRouting || !!data.dropoffAddress.text);
 
     return (
         <div>
@@ -101,26 +181,27 @@ export function StepRoute({ data, onChange, onNext, onBack, priceBar, freeAddons
             <div className="rounded-2xl border border-[#1e2a2c] bg-[#0c1211] p-4 sm:p-6">
                 <p className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-[#3a5060]">Locations</p>
 
-                {/* Free Routing toggle */}
-                <div className="mb-4 flex items-start justify-between gap-4 rounded-xl border border-[#1e2a2c] bg-[#111918]/60 p-3.5">
-                    <div className="flex items-start gap-3">
-                        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#bca066]/10 text-[#bca066]">
-                            <Navigation className="h-3.5 w-3.5" />
-                        </span>
-                        <div>
-                            <p className="text-[13px] font-semibold text-white">Free Routing</p>
-                            <p className="mt-0.5 text-[11px] leading-relaxed text-white/45 sm:text-[12px]">
-                                Skip setting a fixed drop-off — direct your driver in real time.
-                            </p>
+                {!isBuyHours && (
+                    <div className="mb-4 flex items-start justify-between gap-4 rounded-xl border border-[#1e2a2c] bg-[#111918]/60 p-3.5">
+                        <div className="flex items-start gap-3">
+                            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#bca066]/10 text-[#bca066]">
+                                <Navigation className="h-3.5 w-3.5" />
+                            </span>
+                            <div>
+                                <p className="text-[13px] font-semibold text-white">Free Routing</p>
+                                <p className="mt-0.5 text-[11px] leading-relaxed text-white/45 sm:text-[12px]">
+                                    Skip setting a fixed drop-off — direct your driver in real time.
+                                </p>
+                            </div>
                         </div>
+                        <Toggle
+                            checked={data.freeRouting}
+                            onChange={(v) => onChange({ freeRouting: v, stops: [] })}
+                            ariaLabel="Toggle free routing"
+                            className="mt-0.5 shrink-0"
+                        />
                     </div>
-                    <Toggle
-                        checked={data.freeRouting}
-                        onChange={(v) => onChange({ freeRouting: v, stops: [] })}
-                        ariaLabel="Toggle free routing"
-                        className="mt-0.5 shrink-0"
-                    />
-                </div>
+                )}
 
                 <div className="flex flex-col gap-3">
                     {/* Pickup address — editable */}
@@ -131,9 +212,17 @@ export function StepRoute({ data, onChange, onNext, onBack, priceBar, freeAddons
                         onPlaceChange={(place) => onChange({ pickupAddress: place })}
                         placeholder="123 Main St, New York, NY"
                     />
+                    <button
+                        type="button"
+                        onClick={handleUseCurrentLocation}
+                        disabled={isLocating}
+                        className="w-fit rounded-lg border border-[#2e3638] bg-[#1e2527] px-3 py-2 text-[12px] font-medium text-white/75 transition-colors hover:border-[#bca066]/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                        {isLocating ? "Detecting..." : "Use Current Location"}
+                    </button>
 
                     {/* Stops */}
-                    {!data.freeRouting && data.stops.map((stop, i) => (
+                    {!isBuyHours && !data.freeRouting && data.stops.map((stop, i) => (
                         <div key={stop.id} className="flex items-end gap-2">
                             <div className="flex-1">
                                 <AddressAutocomplete
@@ -164,7 +253,7 @@ export function StepRoute({ data, onChange, onNext, onBack, priceBar, freeAddons
                 </div>
 
                 {/* Add stop button */}
-                {!data.freeRouting && (
+                {!isBuyHours && !data.freeRouting && (
                     <button
                         type="button"
                         onClick={addStop}
@@ -185,18 +274,18 @@ export function StepRoute({ data, onChange, onNext, onBack, priceBar, freeAddons
                     )}
                 </div>
 
-                {localAddonsLoading ? (
+                {addonsLoading ? (
                     <p className="py-4 text-center text-[13px] text-white/30">Loading add-ons…</p>
-                ) : (localFreeAddons.length === 0 && localPaidAddons.length === 0) ? (
+                ) : (freeAddons.length === 0 && paidAddons.length === 0) ? (
                     <p className="py-4 text-center text-[13px] text-white/30">No add-ons available.</p>
                 ) : (
                     <div className="flex flex-col gap-4">
                         {/* Paid add-ons */}
-                        {localPaidAddons.length > 0 && (
+                        {paidAddons.length > 0 && (
                             <div>
                                 <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#3a5060]">Paid</p>
                                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                                    {localPaidAddons.map((addon) => {
+                                    {paidAddons.map((addon) => {
                                         const selected = data.selectedAddons.includes(addon._id);
                                         return (
                                             <button
@@ -234,11 +323,11 @@ export function StepRoute({ data, onChange, onNext, onBack, priceBar, freeAddons
                         )}
 
                         {/* Free add-ons */}
-                        {localFreeAddons.length > 0 && (
+                        {freeAddons.length > 0 && (
                             <div>
                                 <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#3a5060]">Complimentary</p>
                                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                                    {localFreeAddons.map((addon) => {
+                                    {freeAddons.map((addon) => {
                                         const selected = data.selectedAddons.includes(addon._id);
                                         return (
                                             <button
