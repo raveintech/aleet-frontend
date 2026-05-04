@@ -112,7 +112,12 @@ function serializeBookingData(data: BookingData) {
   const bookingMode = data.bookingMode ?? "multi_day";
 
   let durationHours: number | undefined;
-  if (bookingMode === "buy_hours" && data.pickupDate && data.pickupTime && data.dropoffDate) {
+  if (
+    bookingMode === "buy_hours" &&
+    data.pickupDate &&
+    data.pickupTime &&
+    data.dropoffDate
+  ) {
     const start = moment(buildDateTime(data.pickupDate, data.pickupTime));
     const end = moment(buildDateTime(data.dropoffDate, effectiveDropoffTime));
     const diff = end.diff(start, "minutes") / 60;
@@ -135,6 +140,9 @@ function serializeBookingData(data: BookingData) {
       ...basePayload,
       durationHours,
       state: data.region,
+      stops: data.stops
+        .filter((s) => s.address.text)
+        .map((s) => ({ location: s.address.text })),
     };
   }
 

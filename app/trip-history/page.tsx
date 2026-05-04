@@ -19,7 +19,7 @@ const MOCK_BOOKINGS: MyBooking[] = [
         dates: { startDate: "2026-04-21T10:00:00Z", endDate: "2026-04-21T12:30:00Z" },
         vehicleType: { _id: "v1", name: "Cadillac Escalade", description: "", hourlyPrice: 120 },
         quantity: 1,
-        stops: ["Union Square", "Brooklyn Bridge"],
+        stops: [{ location: "Union Square" }, { location: "Brooklyn Bridge" }],
         assignedDriver: { name: "James Carter" },
         addOns: [{ _id: "a2", name: "Meet & Greet", description: "", type: "paid", price: 40 }],
         regularPrice: 320,
@@ -39,7 +39,7 @@ const MOCK_BOOKINGS: MyBooking[] = [
         dates: { startDate: "2025-12-15T09:00:00Z", endDate: "2025-12-15T11:00:00Z" },
         vehicleType: { _id: "v4", name: "Mercedes S-Class", description: "", hourlyPrice: 150 },
         quantity: 1,
-        stops: ["Coffee Shop on 5th St"],
+        stops: [{ location: "Coffee Shop on 5th St" }],
         assignedDriver: { name: "Michael Johnson" },
         addOns: [],
         regularPrice: 300,
@@ -99,7 +99,7 @@ const MOCK_BOOKINGS: MyBooking[] = [
         dates: { startDate: "2026-03-28T15:15:00Z", endDate: "2026-03-28T17:30:00Z" },
         vehicleType: { _id: "v2", name: "Mercedes S-Class", description: "", hourlyPrice: 150 },
         quantity: 1,
-        stops: ["SoHo", "Chelsea Market"],
+        stops: [{ location: "SoHo" }, { location: "Chelsea Market" }],
         assignedDriver: { name: "Elena Rossi" },
         addOns: [{ _id: "a1", name: "Child Seat", description: "", type: "paid", price: 25 }],
         regularPrice: 380,
@@ -179,16 +179,16 @@ function BookingCard({ booking }: { booking: MyBooking }) {
                             <p className="text-sm text-white">{booking.pickupLocation}</p>
                         </div>
                     </div>
-                    {(booking.stops as string[]).length > 0 && (
+                    {booking.stops.length > 0 && (
                         <div className="flex items-start gap-2.5">
                             <span className="mt-0.5 shrink-0 text-[#5a7080]">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="h-3.5 w-3.5" aria-hidden><circle cx="12" cy="12" r="3" /><path d="M12 2v4M12 18v4M2 12h4M18 12h4" /></svg>
                             </span>
                             <div>
                                 <p className="text-[11px] font-semibold uppercase tracking-wide text-white/40">
-                                    Stops ({(booking.stops as string[]).length})
+                                    Stops ({booking.stops.length})
                                 </p>
-                                <p className="text-sm text-white">{(booking.stops as string[]).join(", ")}</p>
+                                <p className="text-sm text-white">{booking.stops.map((s) => s.location).join(", ")}</p>
                             </div>
                         </div>
                     )}

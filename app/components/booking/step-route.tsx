@@ -222,7 +222,7 @@ export function StepRoute({ data, quickBookingMode, onChange, onNext, onBack, pr
                     </button>
 
                     {/* Stops */}
-                    {!isBuyHours && !data.freeRouting && data.stops.map((stop, i) => (
+                    {!data.freeRouting && data.stops.map((stop, i) => (
                         <div key={stop.id} className="flex items-end gap-2">
                             <div className="flex-1">
                                 <AddressAutocomplete
@@ -253,7 +253,7 @@ export function StepRoute({ data, quickBookingMode, onChange, onNext, onBack, pr
                 </div>
 
                 {/* Add stop button */}
-                {!isBuyHours && !data.freeRouting && (
+                {!data.freeRouting && (
                     <button
                         type="button"
                         onClick={addStop}

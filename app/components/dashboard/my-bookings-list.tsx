@@ -80,6 +80,16 @@ function BookingCard({ booking }: { booking: MyBooking }) {
                     </span>
                 </div>
 
+                {/* Stops */}
+                {booking.stops.length > 0 && (
+                    <div className="flex items-start gap-2 text-[13px]">
+                        <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#5a7080]" />
+                        <span className="text-white/50">
+                            Stops ({booking.stops.length}): {booking.stops.map((s) => s.location).join(" → ")}
+                        </span>
+                    </div>
+                )}
+
                 {/* Add-ons */}
                 {booking.addOns.length > 0 && (
                     <div className="flex items-start gap-2 text-[13px]">

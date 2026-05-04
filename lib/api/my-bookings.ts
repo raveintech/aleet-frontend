@@ -15,6 +15,13 @@ export type MyBookingVehicleType = {
   hourlyPrice: number;
 };
 
+export type MyBookingStop = {
+  location: string;
+  timeType?: string;
+  dwellMinutes?: number;
+  addOnIds?: string[];
+};
+
 export type MyBooking = {
   _id: string;
   status: string;
@@ -25,7 +32,7 @@ export type MyBooking = {
   dates: { startDate: string; endDate: string };
   vehicleType: MyBookingVehicleType;
   quantity: number;
-  stops: unknown[];
+  stops: MyBookingStop[];
   assignedDriver: unknown | null;
   addOns: MyBookingAddon[];
   regularPrice: number;
