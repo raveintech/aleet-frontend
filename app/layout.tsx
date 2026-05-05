@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Karla } from "next/font/google";
 import { Toaster } from "sonner";
 import { GoogleMapsProvider } from "./components/google-maps-provider";
+import { getSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 const karla = Karla({
@@ -10,8 +11,13 @@ const karla = Karla({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   title: "Aleet - Book a Ride, Track Your Trip",
   description: "Aleet is your go-to platform for seamless ride booking, real-time trip tracking, and effortless account management.",
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
