@@ -93,7 +93,7 @@ export function Popup({
     matchWidth?: boolean;
 }) {
     const popupRef = useRef<HTMLDivElement>(null);
-    const [coords, setCoords] = useState<{ top: number; left: number; width: number; minWidth: number } | null>(null);
+    const [coords, setCoords] = useState<{ top: number; left: number; width: number; minWidth: number; maxHeight: number } | null>(null);
     const [visible, setVisible] = useState(false);
 
     function measure() {
@@ -101,20 +101,37 @@ export function Popup({
         const popup = popupRef.current;
         if (!anchor || !popup) return;
 
+        const margin = 8;
         const r = anchor.getBoundingClientRect();
         const popupHeight = popup.offsetHeight;
         const popupWidth = matchWidth ? r.width : popup.scrollWidth;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
         // Clamp left so the popup doesn't overflow the right edge of the viewport
-        const maxLeft = window.innerWidth - popupWidth - 8;
+        const maxLeft = vw - popupWidth - margin;
         const left = Math.min(r.left, maxLeft);
 
+        // Vertical: auto-flip to whichever side has more room, then clamp into viewport
+        const spaceBelow = vh - r.bottom - margin;
+        const spaceAbove = r.top - margin;
+        let side = placement;
+        if (side === "bottom" && popupHeight > spaceBelow && spaceAbove > spaceBelow) {
+            side = "top";
+        } else if (side === "top" && popupHeight > spaceAbove && spaceBelow > spaceAbove) {
+            side = "bottom";
+        }
+
+        let top = side === "top" ? r.top - popupHeight - margin : r.bottom + margin;
+        const maxTop = vh - popupHeight - margin;
+        top = Math.max(margin, Math.min(top, maxTop));
+
         setCoords({
-            top: placement === "top"
-                ? r.top - popupHeight - 8
-                : r.bottom + 8,
-            left: Math.max(8, left),
+            top,
+            left: Math.max(margin, left),
             width: matchWidth ? r.width : popupWidth,
             minWidth: r.width,
+            maxHeight: vh - 2 * margin,
         });
     }
 
@@ -147,10 +164,10 @@ export function Popup({
             ref={popupRef}
             data-dropdown-popup=""
             style={coords
-                ? { top: coords.top, left: coords.left, width: coords.width, minWidth: coords.minWidth }
+                ? { top: coords.top, left: coords.left, width: coords.width, minWidth: coords.minWidth, maxHeight: coords.maxHeight }
                 : { top: -9999, left: -9999, width: 0, minWidth: 0 }
             }
-            className={`fixed z-9999 overflow-hidden rounded-xl border border-[#2a3336] bg-[#111918] shadow-[0_16px_48px_rgba(0,0,0,0.6)] transition-opacity duration-150 ${visible ? "opacity-100" : "opacity-0"}`}
+            className={`fixed z-9999 overflow-x-hidden overflow-y-auto rounded-xl border border-[#2a3336] bg-[#111918] shadow-[0_16px_48px_rgba(0,0,0,0.6)] transition-opacity duration-150 ${visible ? "opacity-100" : "opacity-0"}`}
         >
             {children}
         </div>,

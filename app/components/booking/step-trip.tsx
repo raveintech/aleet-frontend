@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DatePicker, TimePicker, Select } from "@/app/components/ui";
 import { CarIcon, MapPinIcon } from "@/app/components/ui/icons";
 import type { SelectOption } from "@/app/components/ui/select";
@@ -26,26 +26,30 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
     const [regionOptions, setRegionOptions] = useState<SelectOption[]>([]);
     const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
     const [regions, setRegions] = useState<Region[]>([]);
+    const [optionsLoading, setOptionsLoading] = useState(true);
+    const [optionsError, setOptionsError] = useState(false);
 
-    useEffect(() => {
-        getVehicleTypes()
-            .then((res) => {
-                const types = res.data ?? [];
-                setVehicleTypes(types);
-                setVehicleOptions(types.map((v) => ({ label: v.name, price: `$${v.hourlyPrice}/hr` })));
-            })
-            .catch(() => { });
+    const loadOptions = useCallback(async () => {
+        setOptionsLoading(true);
+        setOptionsError(false);
+        try {
+            const [vehicleRes, regionRes] = await Promise.all([getVehicleTypes(), getRegions()]);
+            const types = vehicleRes.data ?? [];
+            setVehicleTypes(types);
+            setVehicleOptions(types.map((v) => ({ label: v.name, price: `$${v.hourlyPrice}/hr` })));
+            const list = regionRes.data ?? [];
+            setRegions(list);
+            setRegionOptions(list.map((r: Region) => ({ label: r.name })));
+        } catch {
+            setOptionsError(true);
+        } finally {
+            setOptionsLoading(false);
+        }
     }, []);
 
     useEffect(() => {
-        getRegions()
-            .then((res) => {
-                const list = res.data ?? [];
-                setRegions(list);
-                setRegionOptions(list.map((r: Region) => ({ label: r.name })));
-            })
-            .catch(() => { });
-    }, []);
+        loadOptions();
+    }, [loadOptions]);
 
     function handleRegionChange(display: string) {
         const found = regions.find((r) => r.name === display);
@@ -142,6 +146,22 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
             <p className="mb-6 text-[13px] text-white/50 sm:text-[15px]">
                 Select your dates, vehicle type, and region to get started.
             </p>
+
+            {optionsError && (
+                <div className="mb-4 flex flex-col gap-2 rounded-xl border border-[#5a2a2a] bg-[#1a0e0e] px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-[12px] text-[#e0a0a0] sm:text-[13px]">
+                        Couldn&apos;t load vehicles and regions. Check your connection and try again.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={loadOptions}
+                        disabled={optionsLoading}
+                        className="shrink-0 rounded-lg border border-[#bca066]/40 bg-[#bca066]/10 px-3 py-1.5 text-[12px] font-medium text-[#bca066] transition-colors hover:bg-[#bca066]/20 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        {optionsLoading ? "Retrying…" : "Retry"}
+                    </button>
+                </div>
+            )}
 
             {/* ── Dates & Vehicle ── */}
             <div className="rounded-2xl border border-[#1e2a2c] bg-[#0c1211] p-4 sm:p-6">

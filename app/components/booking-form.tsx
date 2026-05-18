@@ -36,6 +36,8 @@ export function BookingForm() {
     const [regionList, setRegionList] = useState<RegionOption[]>([]);
     const [buyHoursVehicle, setBuyHoursVehicle] = useState("");
     const [buyHoursState, setBuyHoursState] = useState("");
+    const [optionsLoading, setOptionsLoading] = useState(true);
+    const [optionsError, setOptionsError] = useState(false);
 
     const handlePickupDateChange = (d: Date | undefined) => {
         setPickupDate(d);
@@ -61,40 +63,44 @@ export function BookingForm() {
         }
     };
 
-    useEffect(() => {
-        getVehicleTypes()
-            .then((res) => {
-                const opts: VehicleOption[] = (res.data ?? []).map((v: VehicleType) => ({
-                    label: v.name,
-                    price: `$${v.hourlyPrice}/hr`,
-                    _id: v._id,
-                    hourlyPrice: v.hourlyPrice,
-                }));
-                setVehicleList(opts);
-                const suv = opts.find((v) => v.label.toLowerCase() === "suv");
-                const first = suv ?? opts[0];
-                if (first) {
-                    const display = first.price ? `${first.label} ${first.price}` : first.label;
-                    setBuyHoursVehicle((prev) => prev || display);
-                }
-            })
-            .catch(() => { });
+    const loadOptions = useCallback(async () => {
+        setOptionsLoading(true);
+        setOptionsError(false);
+        try {
+            const [vehicleRes, regionRes] = await Promise.all([getVehicleTypes(), getRegions()]);
+
+            const vehicleOpts: VehicleOption[] = (vehicleRes.data ?? []).map((v: VehicleType) => ({
+                label: v.name,
+                price: `$${v.hourlyPrice}/hr`,
+                _id: v._id,
+                hourlyPrice: v.hourlyPrice,
+            }));
+            setVehicleList(vehicleOpts);
+            const suv = vehicleOpts.find((v) => v.label.toLowerCase() === "suv");
+            const firstVehicle = suv ?? vehicleOpts[0];
+            if (firstVehicle) {
+                const display = firstVehicle.price ? `${firstVehicle.label} ${firstVehicle.price}` : firstVehicle.label;
+                setBuyHoursVehicle((prev) => prev || display);
+            }
+
+            const regionOpts: RegionOption[] = (regionRes.data ?? []).map((r: Region) => ({
+                label: r.name,
+                _id: r._id,
+            }));
+            setRegionList(regionOpts);
+            if (regionOpts[0]) {
+                setBuyHoursState((prev) => prev || regionOpts[0].label);
+            }
+        } catch {
+            setOptionsError(true);
+        } finally {
+            setOptionsLoading(false);
+        }
     }, []);
 
     useEffect(() => {
-        getRegions()
-            .then((res) => {
-                const opts: RegionOption[] = (res.data ?? []).map((r: Region) => ({
-                    label: r.name,
-                    _id: r._id,
-                }));
-                setRegionList(opts);
-                if (opts[0]) {
-                    setBuyHoursState((prev) => prev || opts[0].label);
-                }
-            })
-            .catch(() => { });
-    }, []);
+        loadOptions();
+    }, [loadOptions]);
 
     const handleQuickBooking = useCallback(async () => {
         if (!pickupDate || !pickupTime || !dropoffDate || !dropoffTime || !vehicle || !state) {
@@ -185,7 +191,23 @@ export function BookingForm() {
         <>
             <BookingModeSwitch mode={mode} onModeChange={setMode} />
 
-            <div className="min-h-[236px] sm:min-h-[248px]">
+            {optionsError && (
+                <div className="mb-2.5 flex flex-col gap-2 rounded-xl border border-[#5a2a2a] bg-[#1a0e0e] px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-[12px] text-[#e0a0a0] sm:text-[13px]">
+                        Couldn&apos;t load vehicles and regions. Check your connection and try again.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={loadOptions}
+                        disabled={optionsLoading}
+                        className="shrink-0 rounded-lg border border-[#bca066]/40 bg-[#bca066]/10 px-3 py-1.5 text-[12px] font-medium text-[#bca066] transition-colors hover:bg-[#bca066]/20 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        {optionsLoading ? "Retrying…" : "Retry"}
+                    </button>
+                </div>
+            )}
+
+            <div className="min-h-59 sm:min-h-62">
                 {mode === "buy-hours" && (
                     <BuyHoursBookingForm
                         vehicleList={vehicleList}
