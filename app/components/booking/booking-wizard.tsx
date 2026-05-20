@@ -14,6 +14,7 @@ import { getVehicleTypes, type VehicleType } from "@/lib/api/vehicle-types";
 import { getRegions, type Region } from "@/lib/api/regions";
 import { PriceBar } from "./price-bar";
 import { getToken } from "@/lib/auth";
+import { getProfile } from "@/lib/api/users";
 import { ApiError } from "@/lib/api";
 import { toast, DatePicker, TimePicker, Select } from "@/app/components/ui";
 import { CarIcon, MapPinIcon } from "@/app/components/ui/icons";
@@ -39,10 +40,12 @@ function TripSummaryBar({
     data,
     onChange,
     quickBookingMode,
+    isMember = false,
 }: {
     data: BookingData;
     onChange: (patch: Partial<BookingData>) => void;
     quickBookingMode: "buy_hours" | "multi_day" | null;
+    isMember?: boolean;
 }) {
     const [editing, setEditing] = useState(false);
     const [vehicleOptions, setVehicleOptions] = useState<SelectOption[]>([]);
@@ -99,7 +102,7 @@ function TripSummaryBar({
     function handlePickupTimeChange(t: string) {
         const patch: Partial<BookingData> = { pickupTime: t };
         if (data.pickupDate && data.dropoffDate && data.dropoffTime) {
-            const invalid = isDropoffTimeDisabled(data.pickupDate, t, data.dropoffDate, slotFromTimeStr(data.dropoffTime));
+            const invalid = isDropoffTimeDisabled(data.pickupDate, t, data.dropoffDate, slotFromTimeStr(data.dropoffTime), isMember);
             if (invalid) patch.dropoffTime = "";
         }
         onChange(patch);
@@ -111,7 +114,7 @@ function TripSummaryBar({
             patch.dropoffTime = data.pickupTime;
         }
         if (d && data.pickupDate && data.pickupTime && data.dropoffTime) {
-            const invalid = isDropoffTimeDisabled(data.pickupDate, data.pickupTime, d, slotFromTimeStr(data.dropoffTime));
+            const invalid = isDropoffTimeDisabled(data.pickupDate, data.pickupTime, d, slotFromTimeStr(data.dropoffTime), isMember);
             if (invalid) patch.dropoffTime = "";
         }
         onChange(patch);
@@ -270,7 +273,7 @@ function TripSummaryBar({
                             value={data.dropoffTime}
                             onChange={(t) => onChange({ dropoffTime: t })}
                             disableSlot={(slot) =>
-                                isDropoffTimeDisabled(data.pickupDate, data.pickupTime, data.dropoffDate, slot)
+                                isDropoffTimeDisabled(data.pickupDate, data.pickupTime, data.dropoffDate, slot, isMember)
                             }
                             disabledMessage={!data.dropoffDate ? "Select a drop-off date first" : "Min. 3h after pick-up time"}
                         />
@@ -363,7 +366,19 @@ export function BookingWizard({ onStepChange, renderIndicator }: { onStepChange?
     const [freeAddons, setFreeAddons] = useState<ApiAddon[]>([]);
     const [paidAddons, setPaidAddons] = useState<ApiAddon[]>([]);
     const [addonsLoading, setAddonsLoading] = useState(true);
+    const [isMember, setIsMember] = useState(false);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Detect membership — members are exempt from the 3-hour minimum
+    useEffect(() => {
+        const token = getToken();
+        if (!token) return;
+        getProfile(token)
+            .then((res) => {
+                if (res.data) setIsMember(res.data.subscriptionStatus === "subscriber");
+            })
+            .catch(() => { /* treat as non-member */ });
+    }, []);
 
     // On mount (client only): load pending booking from localStorage and jump to step 2
     useLayoutEffect(() => {
@@ -533,12 +548,12 @@ export function BookingWizard({ onStepChange, renderIndicator }: { onStepChange?
             {renderIndicator?.(step, fromQuickBooking)}
             <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-8 sm:py-12">
                 {step === 1 && !fromQuickBooking && (
-                    <StepTrip data={data} onChange={handleChange} onNext={() => goTo(2)} priceBar={priceBarEl} />
+                    <StepTrip data={data} onChange={handleChange} onNext={() => goTo(2)} priceBar={priceBarEl} isMember={isMember} />
                 )}
                 {step === 2 && (
                     <>
                         {fromQuickBooking && (
-                            <TripSummaryBar data={data} onChange={handleChange} quickBookingMode={quickBookingMode} />
+                            <TripSummaryBar data={data} onChange={handleChange} quickBookingMode={quickBookingMode} isMember={isMember} />
                         )}
                         <StepRoute data={data} quickBookingMode={quickBookingMode} onChange={handleChange} onNext={() => goTo(3)} onBack={fromQuickBooking ? undefined : () => goTo(1)} priceBar={priceBarEl} freeAddons={freeAddons} paidAddons={paidAddons} addonsLoading={addonsLoading} />
                     </>
@@ -546,7 +561,7 @@ export function BookingWizard({ onStepChange, renderIndicator }: { onStepChange?
                 {step === 3 && (
                     <>
                         {fromQuickBooking && (
-                            <TripSummaryBar data={data} onChange={handleChange} quickBookingMode={quickBookingMode} />
+                            <TripSummaryBar data={data} onChange={handleChange} quickBookingMode={quickBookingMode} isMember={isMember} />
                         )}
                         <StepConfirm
                             data={data}
