@@ -121,6 +121,7 @@ export function isDropoffTimeDisabled(
   pickupTime: string,
   dropoffDate: Date | undefined,
   slot: TimeSlot,
+  isMember = false,
 ): boolean {
   // If drop-off date is not yet chosen, block all slots so the user picks a date first
   if (!pickupDate || !pickupTime || !dropoffDate) return false;
@@ -151,8 +152,8 @@ export function isDropoffTimeDisabled(
 
   const diffHours = (dropoffMs - pickupMs) / 3_600_000;
 
-  // Must be ≥ 3h
-  return diffHours < MIN_DURATION_HOURS;
+  // Members are exempt from the 3-hour minimum; still block illogical (<= 0h) durations.
+  return isMember ? diffHours <= 0 : diffHours < MIN_DURATION_HOURS;
 }
 
 /**

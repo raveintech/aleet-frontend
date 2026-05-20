@@ -19,9 +19,10 @@ type Props = {
     onChange: (patch: Partial<BookingData>) => void;
     onNext: () => void;
     priceBar?: React.ReactNode;
+    isMember?: boolean;
 };
 
-export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
+export function StepTrip({ data, onChange, onNext, priceBar, isMember = false }: Props) {
     const [vehicleOptions, setVehicleOptions] = useState<SelectOption[]>([]);
     const [regionOptions, setRegionOptions] = useState<SelectOption[]>([]);
     const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
@@ -76,7 +77,7 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
     function handlePickupTimeChange(t: string) {
         const patch: Partial<BookingData> = { pickupTime: t };
         if (data.pickupDate && data.dropoffDate && data.dropoffTime) {
-            const invalid = isDropoffTimeDisabled(data.pickupDate, t, data.dropoffDate, slotFromTimeStr(data.dropoffTime));
+            const invalid = isDropoffTimeDisabled(data.pickupDate, t, data.dropoffDate, slotFromTimeStr(data.dropoffTime), isMember);
             if (invalid) patch.dropoffTime = "";
         }
         onChange(patch);
@@ -91,7 +92,7 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
         }
         // If a drop-off time is already selected, re-validate it against the new date
         if (d && data.pickupDate && data.pickupTime && data.dropoffTime) {
-            const invalid = isDropoffTimeDisabled(data.pickupDate, data.pickupTime, d, slotFromTimeStr(data.dropoffTime));
+            const invalid = isDropoffTimeDisabled(data.pickupDate, data.pickupTime, d, slotFromTimeStr(data.dropoffTime), isMember);
             if (invalid) patch.dropoffTime = "";
         }
         onChange(patch);
@@ -123,7 +124,8 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
         ? durationHours * data.vehicleHourlyRate * data.quantity
         : null;
 
-    const isDurationValid = durationHours !== null && durationHours >= 3;
+    const isDurationValid =
+        durationHours !== null && (isMember ? durationHours > 0 : durationHours >= 3);
 
     const isValid =
         !!data.pickupDate &&
@@ -187,7 +189,7 @@ export function StepTrip({ data, onChange, onNext, priceBar }: Props) {
                         value={data.dropoffTime}
                         onChange={(t) => onChange({ dropoffTime: t })}
                         disableSlot={(slot) =>
-                            isDropoffTimeDisabled(data.pickupDate, data.pickupTime, data.dropoffDate, slot)
+                            isDropoffTimeDisabled(data.pickupDate, data.pickupTime, data.dropoffDate, slot, isMember)
                         }
                         disabledMessage={!data.dropoffDate ? "Select a drop-off date first" : "Min. 3h after pick-up time"}
                     />

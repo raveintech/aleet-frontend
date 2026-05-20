@@ -168,8 +168,8 @@ export function StepRoute({ data, quickBookingMode, onChange, onNext, onBack, pr
                     </div>
                     <button
                         type="button"
-                        onClick={() => onChange({ quantity: Math.min(500, data.quantity + 1) })}
-                        disabled={data.quantity >= 500}
+                        onClick={() => onChange({ quantity: Math.min(5, data.quantity + 1) })}
+                        disabled={data.quantity >= 5}
                         className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#2e3638] bg-[#1e2527] text-white/60 transition-colors hover:border-[#bca066]/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
                     >
                         <span className="text-lg font-light leading-none">+</span>

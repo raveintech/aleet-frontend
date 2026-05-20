@@ -7,6 +7,7 @@ import { getVehicleTypes, type VehicleType } from "@/lib/api/vehicle-types";
 import { getRegions, type Region } from "@/lib/api/regions";
 import { savePendingBooking } from "@/lib/pending-booking";
 import { getToken } from "@/lib/auth";
+import { getProfile } from "@/lib/api/users";
 import {
     isDropoffTimeDisabled,
     slotFromTimeStr,
@@ -36,6 +37,18 @@ export function BookingForm() {
     const [regionList, setRegionList] = useState<RegionOption[]>([]);
     const [buyHoursVehicle, setBuyHoursVehicle] = useState("");
     const [buyHoursState, setBuyHoursState] = useState("");
+    const [isMember, setIsMember] = useState(false);
+
+    // Detect membership — members are exempt from the 3-hour minimum
+    useEffect(() => {
+        const token = getToken();
+        if (!token) return;
+        getProfile(token)
+            .then((res) => {
+                if (res.data) setIsMember(res.data.subscriptionStatus === "subscriber");
+            })
+            .catch(() => { /* treat as non-member */ });
+    }, []);
 
     const handlePickupDateChange = (d: Date | undefined) => {
         setPickupDate(d);
@@ -48,7 +61,7 @@ export function BookingForm() {
     const handlePickupTimeChange = (t: string) => {
         setPickupTime(t);
         if (pickupDate && dropoffDate && dropoffTime) {
-            const invalid = isDropoffTimeDisabled(pickupDate, t, dropoffDate, slotFromTimeStr(dropoffTime));
+            const invalid = isDropoffTimeDisabled(pickupDate, t, dropoffDate, slotFromTimeStr(dropoffTime), isMember);
             if (invalid) setDropoffTime("");
         }
     };
@@ -56,7 +69,7 @@ export function BookingForm() {
     const handleDropoffDateChange = (d: Date | undefined) => {
         setDropoffDate(d);
         if (d && pickupDate && pickupTime && dropoffTime) {
-            const invalid = isDropoffTimeDisabled(pickupDate, pickupTime, d, slotFromTimeStr(dropoffTime));
+            const invalid = isDropoffTimeDisabled(pickupDate, pickupTime, d, slotFromTimeStr(dropoffTime), isMember);
             if (invalid) setDropoffTime("");
         }
     };
@@ -177,8 +190,8 @@ export function BookingForm() {
         return h > 0 ? h : 0;
     })();
 
-    const isDurationTooShort = durationHours !== null && durationHours < MIN_DURATION_HOURS;
-    const showMinimumNotice = durationHours !== null && durationHours < MIN_DURATION_HOURS;
+    const isDurationTooShort = durationHours !== null && durationHours < MIN_DURATION_HOURS && !isMember;
+    const showMinimumNotice = durationHours !== null && durationHours < MIN_DURATION_HOURS && !isMember;
     const isBookingDisabled = isLoading || isDurationTooShort;
 
     return (
