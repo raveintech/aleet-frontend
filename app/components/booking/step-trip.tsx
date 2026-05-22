@@ -13,6 +13,8 @@ import {
     slotFromTimeStr,
 } from "@/lib/booking-constraints";
 import type { BookingData } from "./booking-types";
+import { SameDayNotice } from "./same-day-notice";
+import type { SameDayAvailability } from "@/lib/use-same-day-availability";
 
 type Props = {
     data: BookingData;
@@ -20,9 +22,10 @@ type Props = {
     onNext: () => void;
     priceBar?: React.ReactNode;
     isMember?: boolean;
+    sameDay: SameDayAvailability;
 };
 
-export function StepTrip({ data, onChange, onNext, priceBar, isMember = false }: Props) {
+export function StepTrip({ data, onChange, onNext, priceBar, isMember = false, sameDay }: Props) {
     const [vehicleOptions, setVehicleOptions] = useState<SelectOption[]>([]);
     const [regionOptions, setRegionOptions] = useState<SelectOption[]>([]);
     const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
@@ -134,7 +137,8 @@ export function StepTrip({ data, onChange, onNext, priceBar, isMember = false }:
         !!data.dropoffTime &&
         !!data.vehicleType &&
         !!data.region &&
-        isDurationValid;
+        isDurationValid &&
+        !sameDay.blocked;
 
     return (
         <div>
@@ -221,6 +225,9 @@ export function StepTrip({ data, onChange, onNext, priceBar, isMember = false }:
                     </div>
                 </div>
             </div>
+
+            {/* Same-day availability — styled inline notice + Continue gate */}
+            <SameDayNotice sameDay={sameDay} />
 
             <div className="mt-6">
                 {priceBar}
