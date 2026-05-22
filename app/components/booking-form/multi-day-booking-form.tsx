@@ -18,6 +18,7 @@ type MultiDayBookingFormProps = {
     regionOptions: SelectOption[];
     isLoading: boolean;
     isBookingDisabled: boolean;
+    isMember?: boolean;
     onPickupDateChange: (date: Date | undefined) => void;
     onPickupTimeChange: (time: string) => void;
     onDropoffDateChange: (date: Date | undefined) => void;
@@ -38,6 +39,7 @@ export function MultiDayBookingForm({
     regionOptions,
     isLoading,
     isBookingDisabled,
+    isMember = false,
     onPickupDateChange,
     onPickupTimeChange,
     onDropoffDateChange,
@@ -54,7 +56,8 @@ export function MultiDayBookingForm({
                     label="Pick Up Time"
                     value={pickupTime}
                     onChange={onPickupTimeChange}
-                    disableSlot={(slot) => isPickupTimeDisabled(pickupDate, slot)}
+                    disableSlot={(slot) => isPickupTimeDisabled(pickupDate, slot, isMember)}
+                    disabledMessage={isMember ? "Cannot select a past time" : "Earliest pick-up is 3 hours from now"}
                 />
                 <Select
                     label="Vehicle Type"

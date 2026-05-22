@@ -26,6 +26,7 @@ type BuyHoursBookingFormProps = {
     regionList: RegionOption[];
     vehicleValue: string;
     stateValue: string;
+    isMember?: boolean;
     onVehicleChange: (value: string) => void;
     onStateChange: (value: string) => void;
     onContinue: (payload: BuyHoursPayload) => void;
@@ -91,6 +92,7 @@ export function BuyHoursBookingForm({
     regionList,
     vehicleValue,
     stateValue,
+    isMember = false,
     onVehicleChange,
     onStateChange,
     onContinue,
@@ -102,6 +104,9 @@ export function BuyHoursBookingForm({
     const [durationHours, setDurationHours] = useState(3);
     const [dropoffLocationText, setDropoffLocationText] = useState("");
     const [dropoffLocationPlaceId, setDropoffLocationPlaceId] = useState("");
+
+    // Non-members have a 3-hour minimum on buy-hours bookings; members are exempt.
+    const minHours = isMember ? 1 : 3;
 
     const vehicleOptions: SelectOption[] = vehicleList;
     const vehicle = vehicleValue || pickDefaultVehicle(vehicleList);
@@ -139,14 +144,15 @@ export function BuyHoursBookingForm({
                     label="Pick Up Time"
                     value={pickupTime}
                     onChange={setPickupTime}
-                    disableSlot={(slot) => isPickupTimeDisabled(pickupDate, slot)}
+                    disableSlot={(slot) => isPickupTimeDisabled(pickupDate, slot, isMember)}
+                    disabledMessage={isMember ? "Cannot select a past time" : "Earliest pick-up is 3 hours from now"}
                 />
                 <div>
                     <p className="mb-1.5 text-[12px] font-semibold uppercase tracking-widest text-[#7a8a9a]">Duration</p>
                     <div className="flex h-11 items-center justify-between rounded-lg border border-[#2e3638] bg-[#1e2527] px-2.5 sm:h-12">
                         <button
                             type="button"
-                            onClick={() => setDurationHours((prev) => Math.max(1, prev - 1))}
+                            onClick={() => setDurationHours((prev) => Math.max(minHours, prev - 1))}
                             className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-white/70 transition-colors hover:bg-[#2a3336] hover:text-white"
                         >
                             −
