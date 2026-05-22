@@ -3,12 +3,20 @@
  * Rules
  * ─────
  * • Cannot book in the past
+ * • Non-members: earliest pick-up is now + 3 h (notice rule)
  * • endDate − startDate ≥ 3 h
  * • endDate > startDate
  */
 
 /** Minimum booking duration in hours. */
 export const MIN_DURATION_HOURS = 3;
+
+/**
+ * Notice a non-member must give before pick-up.
+ * Mirrors backend `NON_MEMBER_NOTICE_MS` in src/utils/bookingHelpers.js.
+ * Members are exempt ("Members = no minimums").
+ */
+export const NON_MEMBER_NOTICE_HOURS = 3;
 
 // ── time helpers ────────────────────────────────────────────────────────────
 
@@ -92,11 +100,16 @@ function slotToMinutes(slot: TimeSlot): number {
 
 /**
  * Returns `true` when a given time-slot should be **disabled** for a
- * *pickup* field on a given date (i.e. it is in the past).
+ * *pickup* field on a given date.
+ *
+ * Always disabled when the slot is in the past. For non-members it is also
+ * disabled when it falls inside the `NON_MEMBER_NOTICE_HOURS` notice window
+ * from now. Members give no notice and are only blocked from past slots.
  */
 export function isPickupTimeDisabled(
   date: Date | undefined,
   slot: TimeSlot,
+  isMember = false,
 ): boolean {
   if (!date) return false;
   const now = new Date();
@@ -109,7 +122,14 @@ export function isPickupTimeDisabled(
     return false;
   }
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  return slotToMinutes(slot) <= nowMinutes;
+  const slotMinutes = slotToMinutes(slot);
+  // Past slots are always disabled.
+  if (slotMinutes <= nowMinutes) return true;
+  // Non-members must give NON_MEMBER_NOTICE_HOURS notice before pick-up.
+  if (!isMember && slotMinutes < nowMinutes + NON_MEMBER_NOTICE_HOURS * 60) {
+    return true;
+  }
+  return false;
 }
 
 /**

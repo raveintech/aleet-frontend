@@ -205,6 +205,7 @@ export function BookingForm() {
                         regionList={regionList}
                         vehicleValue={buyHoursVehicle}
                         stateValue={buyHoursState}
+                        isMember={isMember}
                         onVehicleChange={setBuyHoursVehicle}
                         onStateChange={setBuyHoursState}
                         onContinue={handleBuyHoursContinue}
@@ -223,6 +224,7 @@ export function BookingForm() {
                         regionOptions={regionOptions}
                         isLoading={isLoading}
                         isBookingDisabled={isBookingDisabled}
+                        isMember={isMember}
                         onPickupDateChange={handlePickupDateChange}
                         onPickupTimeChange={handlePickupTimeChange}
                         onDropoffDateChange={handleDropoffDateChange}
