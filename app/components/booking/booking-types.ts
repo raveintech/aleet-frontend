@@ -1,6 +1,8 @@
 export type BookingStop = {
   id: string;
   address: PlaceValue;
+  /** Arrival time at this stop, "HH:MM AM/PM". Assumed to fall on the pickup date. */
+  time: string;
 };
 
 /** Stores both the display text and the stable Google placeId */

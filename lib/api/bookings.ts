@@ -135,14 +135,21 @@ function serializeBookingData(data: BookingData) {
     addOns: data.selectedAddons,
   };
 
+  // A stop's time is collected as "HH:MM AM/PM" and assumed to be on the
+  // pickup date. The backend expects an ISO-UTC datetime, so combine the two.
+  const mapStop = (s: BookingData["stops"][number]) => ({
+    location: s.address.text,
+    ...(s.time && data.pickupDate
+      ? { time: buildDateTime(data.pickupDate, s.time) }
+      : {}),
+  });
+
   if (bookingMode === "buy_hours") {
     return {
       ...basePayload,
       durationHours,
       state: data.region,
-      stops: data.stops
-        .filter((s) => s.address.text)
-        .map((s) => ({ location: s.address.text })),
+      stops: data.stops.filter((s) => s.address.text).map(mapStop),
     };
   }
 
@@ -150,9 +157,7 @@ function serializeBookingData(data: BookingData) {
     ...basePayload,
     endDate,
     freeRouting: data.freeRouting,
-    stops: data.stops
-      .filter((s) => s.address.text)
-      .map((s) => ({ location: s.address.text })),
+    stops: data.stops.filter((s) => s.address.text).map(mapStop),
   };
 }
 
