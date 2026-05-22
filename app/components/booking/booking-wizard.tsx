@@ -26,6 +26,8 @@ import {
     combineDateAndTime,
 } from "@/lib/booking-constraints";
 import { loadPendingBooking, clearPendingBooking } from "@/lib/pending-booking";
+import { useSameDayAvailability } from "@/lib/use-same-day-availability";
+import { SameDayNotice } from "./same-day-notice";
 
 type Step = 1 | 2 | 3;
 
@@ -370,6 +372,10 @@ export function BookingWizard({ onStepChange, renderIndicator }: { onStepChange?
     const [isMember, setIsMember] = useState(false);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // Live same-day availability for the chosen region + pickup. Drives the
+    // styled SameDayNotice and gates Continue / Confirm before submission.
+    const sameDay = useSameDayAvailability(data.regionId, data.pickupDate, data.pickupTime);
+
     // Detect membership — members are exempt from the 3-hour minimum
     useEffect(() => {
         const token = getToken();
@@ -477,6 +483,13 @@ export function BookingWizard({ onStepChange, renderIndicator }: { onStepChange?
     }
 
     async function handleConfirm() {
+        if (sameDay.blocked) {
+            toast.error(
+                sameDay.status?.message ??
+                "Same-day booking is currently unavailable for this region.",
+            );
+            return;
+        }
         setIsSubmitting(true);
         try {
             const token = getToken() ?? undefined;
@@ -549,13 +562,14 @@ export function BookingWizard({ onStepChange, renderIndicator }: { onStepChange?
             {renderIndicator?.(step, fromQuickBooking)}
             <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-8 sm:py-12">
                 {step === 1 && !fromQuickBooking && (
-                    <StepTrip data={data} onChange={handleChange} onNext={() => goTo(2)} priceBar={priceBarEl} isMember={isMember} />
+                    <StepTrip data={data} onChange={handleChange} onNext={() => goTo(2)} priceBar={priceBarEl} isMember={isMember} sameDay={sameDay} />
                 )}
                 {step === 2 && (
                     <>
                         {fromQuickBooking && (
                             <TripSummaryBar data={data} onChange={handleChange} quickBookingMode={quickBookingMode} isMember={isMember} />
                         )}
+                        <SameDayNotice sameDay={sameDay} />
                         <StepRoute data={data} quickBookingMode={quickBookingMode} onChange={handleChange} onNext={() => goTo(3)} onBack={fromQuickBooking ? undefined : () => goTo(1)} priceBar={priceBarEl} freeAddons={freeAddons} paidAddons={paidAddons} addonsLoading={addonsLoading} />
                     </>
                 )}
@@ -564,6 +578,7 @@ export function BookingWizard({ onStepChange, renderIndicator }: { onStepChange?
                         {fromQuickBooking && (
                             <TripSummaryBar data={data} onChange={handleChange} quickBookingMode={quickBookingMode} isMember={isMember} />
                         )}
+                        <SameDayNotice sameDay={sameDay} />
                         <StepConfirm
                             data={data}
                             serverPrice={serverPrice}
@@ -573,6 +588,7 @@ export function BookingWizard({ onStepChange, renderIndicator }: { onStepChange?
                             onBack={() => goTo(2)}
                             onConfirm={handleConfirm}
                             isLoading={isSubmitting}
+                            confirmDisabled={sameDay.blocked}
                         />
                     </>
                 )}

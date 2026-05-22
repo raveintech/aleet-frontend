@@ -5,6 +5,8 @@ export type ApiResponse<T = undefined> = {
   success: boolean;
   message: string;
   data?: T;
+  /** Structured error detail on failures (e.g. `eligibility` on a blocked booking). */
+  errors?: unknown;
 };
 
 type RequestOptions = Omit<RequestInit, "body"> & {
@@ -16,6 +18,8 @@ export class ApiError extends Error {
   constructor(
     public readonly status: number,
     message: string,
+    /** Structured `errors` payload from the API response, when present. */
+    public readonly errors?: unknown,
   ) {
     super(message);
     this.name = "ApiError";
@@ -48,7 +52,7 @@ export async function apiFetch<T = undefined>(
       document.cookie = "auth_token=; path=/; max-age=0";
       window.location.href = "/login";
     }
-    throw new ApiError(res.status, json.message ?? "Unknown error");
+    throw new ApiError(res.status, json.message ?? "Unknown error", json.errors);
   }
 
   return json;

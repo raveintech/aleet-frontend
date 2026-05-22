@@ -15,6 +15,8 @@ type Props = {
     onBack: () => void;
     onConfirm: () => void;
     isLoading?: boolean;
+    /** Blocks the Confirm button — e.g. same-day booking is unavailable. */
+    confirmDisabled?: boolean;
 };
 
 function formatDate(d: Date | undefined) {
@@ -67,7 +69,7 @@ function Row({ icon, label, value }: { icon: React.ReactNode; label: string; val
     );
 }
 
-export function StepConfirm({ data, serverPrice, priceLoading, freeAddons, paidAddons, onBack, onConfirm, isLoading }: Props) {
+export function StepConfirm({ data, serverPrice, priceLoading, freeAddons, paidAddons, onBack, onConfirm, isLoading, confirmDisabled }: Props) {
     const hours = calcDurationHours(data);
 
     // Fallback client-side totals used only when server price is unavailable
@@ -243,6 +245,7 @@ export function StepConfirm({ data, serverPrice, priceLoading, freeAddons, paidA
                     className="flex-1"
                     onClick={onConfirm}
                     isLoading={isLoading}
+                    disabled={confirmDisabled}
                 >
                     {!isLoading && <CheckCircle2 className="mr-2 h-4 w-4" />}
                     Confirm Booking
