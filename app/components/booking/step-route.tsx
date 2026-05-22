@@ -2,7 +2,7 @@
 
 import { Plus, Trash2, Navigation, Check } from "lucide-react";
 import { useState } from "react";
-import { Button, Toggle, AddressAutocomplete, toast } from "@/app/components/ui";
+import { Button, Toggle, AddressAutocomplete, TimePicker, toast } from "@/app/components/ui";
 import type { BookingData } from "./booking-types";
 import type { ApiAddon } from "@/lib/api/addons";
 
@@ -26,11 +26,15 @@ export function StepRoute({ data, quickBookingMode, onChange, onNext, onBack, pr
     const [isLocating, setIsLocating] = useState(false);
 
     function addStop() {
-        onChange({ stops: [...data.stops, { id: nanoid(), address: { text: "", placeId: "" } }] });
+        onChange({ stops: [...data.stops, { id: nanoid(), address: { text: "", placeId: "" }, time: "" }] });
     }
 
     function updateStop(id: string, place: { text: string; placeId: string }) {
         onChange({ stops: data.stops.map((s) => (s.id === id ? { ...s, address: place } : s)) });
+    }
+
+    function updateStopTime(id: string, time: string) {
+        onChange({ stops: data.stops.map((s) => (s.id === id ? { ...s, time } : s)) });
     }
 
     function removeStop(id: string) {
@@ -223,23 +227,31 @@ export function StepRoute({ data, quickBookingMode, onChange, onNext, onBack, pr
 
                     {/* Stops */}
                     {!data.freeRouting && data.stops.map((stop, i) => (
-                        <div key={stop.id} className="flex items-end gap-2">
-                            <div className="flex-1">
-                                <AddressAutocomplete
-                                    label={`Stop ${i + 1}`}
-                                    value={stop.address.text}
-                                    onChange={(v) => updateStop(stop.id, { ...stop.address, text: v })}
-                                    onPlaceChange={(place) => updateStop(stop.id, place)}
-                                    placeholder="Enter stop address"
-                                />
+                        <div key={stop.id} className="flex flex-col gap-2">
+                            <div className="flex items-end gap-2">
+                                <div className="flex-1">
+                                    <AddressAutocomplete
+                                        label={`Stop ${i + 1}`}
+                                        value={stop.address.text}
+                                        onChange={(v) => updateStop(stop.id, { ...stop.address, text: v })}
+                                        onPlaceChange={(place) => updateStop(stop.id, place)}
+                                        placeholder="Enter stop address"
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => removeStop(stop.id)}
+                                    className="mb-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[#2e3638] bg-[#1e2527] text-[#5a6870] transition-colors hover:border-red-500/30 hover:bg-red-950/30 hover:text-red-400 sm:h-12 sm:w-12"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </button>
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => removeStop(stop.id)}
-                                className="mb-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[#2e3638] bg-[#1e2527] text-[#5a6870] transition-colors hover:border-red-500/30 hover:bg-red-950/30 hover:text-red-400 sm:h-12 sm:w-12"
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </button>
+                            <TimePicker
+                                label={`Stop ${i + 1} Arrival Time`}
+                                value={stop.time}
+                                onChange={(t) => updateStopTime(stop.id, t)}
+                                placeholder="Select arrival time"
+                            />
                         </div>
                     ))}
 
