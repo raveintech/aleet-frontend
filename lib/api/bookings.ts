@@ -133,6 +133,7 @@ function serializeBookingData(data: BookingData) {
     pickupLocation: data.pickupAddress.text || data.pickupAddress.placeId,
     dropoffLocation: data.dropoffAddress.text || data.dropoffAddress.placeId,
     addOns: data.selectedAddons,
+    specialNotes: data.specialRequests.trim() || undefined,
   };
 
   // A stop's time is collected as "HH:MM AM/PM" and assumed to be on the
@@ -142,6 +143,7 @@ function serializeBookingData(data: BookingData) {
     ...(s.time && data.pickupDate
       ? { time: buildDateTime(data.pickupDate, s.time) }
       : {}),
+    ...(s.notes.trim() ? { notes: s.notes.trim() } : {}),
   });
 
   if (bookingMode === "buy_hours") {

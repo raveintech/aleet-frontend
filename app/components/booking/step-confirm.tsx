@@ -118,7 +118,11 @@ export function StepConfirm({ data, serverPrice, priceLoading, freeAddons, paidA
                         {/* Timeline line */}
                         <div className="absolute left-1.75 top-3 bottom-3 w-px bg-[#1e2a2c]" />
 
-                        {[data.pickupAddress, ...data.stops.map((s) => s.address), data.dropoffAddress].filter((a) => a.text).map((addr, i, arr) => (
+                        {[
+                            { text: data.pickupAddress.text, note: "" },
+                            ...data.stops.map((s) => ({ text: s.address.text, note: s.notes })),
+                            { text: data.dropoffAddress.text, note: "" },
+                        ].filter((a) => a.text).map((item, i, arr) => (
                             <div key={i} className="flex items-start gap-3 py-2">
                                 <span className="relative z-10 mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-[#2e3638] bg-[#0c1211]">
                                     {i === 0 ? (
@@ -129,9 +133,14 @@ export function StepConfirm({ data, serverPrice, priceLoading, freeAddons, paidA
                                         <span className="h-1.5 w-1.5 rounded-full bg-white/20" />
                                     )}
                                 </span>
-                                <p className={`text-[13px] ${i === 0 ? "font-medium text-white" : i === arr.length - 1 ? "font-medium text-white/80" : "text-white/50"}`}>
-                                    {addr.text}
-                                </p>
+                                <div className="min-w-0">
+                                    <p className={`text-[13px] ${i === 0 ? "font-medium text-white" : i === arr.length - 1 ? "font-medium text-white/80" : "text-white/50"}`}>
+                                        {item.text}
+                                    </p>
+                                    {item.note.trim() && (
+                                        <p className="mt-0.5 text-[12px] italic text-[#bca066]/70">{item.note}</p>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>

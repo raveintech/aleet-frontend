@@ -26,7 +26,7 @@ export function StepRoute({ data, quickBookingMode, onChange, onNext, onBack, pr
     const [isLocating, setIsLocating] = useState(false);
 
     function addStop() {
-        onChange({ stops: [...data.stops, { id: nanoid(), address: { text: "", placeId: "" }, time: "" }] });
+        onChange({ stops: [...data.stops, { id: nanoid(), address: { text: "", placeId: "" }, time: "", notes: "" }] });
     }
 
     function updateStop(id: string, place: { text: string; placeId: string }) {
@@ -35,6 +35,10 @@ export function StepRoute({ data, quickBookingMode, onChange, onNext, onBack, pr
 
     function updateStopTime(id: string, time: string) {
         onChange({ stops: data.stops.map((s) => (s.id === id ? { ...s, time } : s)) });
+    }
+
+    function updateStopNotes(id: string, notes: string) {
+        onChange({ stops: data.stops.map((s) => (s.id === id ? { ...s, notes } : s)) });
     }
 
     function removeStop(id: string) {
@@ -251,6 +255,13 @@ export function StepRoute({ data, quickBookingMode, onChange, onNext, onBack, pr
                                 value={stop.time}
                                 onChange={(t) => updateStopTime(stop.id, t)}
                                 placeholder="Select arrival time"
+                            />
+                            <textarea
+                                rows={2}
+                                value={stop.notes}
+                                onChange={(e) => updateStopNotes(stop.id, e.target.value)}
+                                placeholder={`Notes for stop ${i + 1} (optional) — gate code, contact, instructions…`}
+                                className="w-full resize-none rounded-lg border border-[#2e3638] bg-[#1e2527] px-3 py-2.5 text-[13px] text-white placeholder:text-[#5a6870] outline-none transition-colors focus:border-[#bca066]/40 focus:bg-[#1e2a1a] sm:text-[14px]"
                             />
                         </div>
                     ))}
