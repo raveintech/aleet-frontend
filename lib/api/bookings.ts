@@ -163,6 +163,29 @@ function serializeBookingData(data: BookingData) {
   };
 }
 
+/**
+ * The intended trip window as ISO-UTC strings, built with the SAME basis
+ * (`buildDateTime`) used when persisting a booking — so an overlap check
+ * against stored trips compares like-for-like. Used by the same-day
+ * availability lookup. Either field is undefined until its date+time exist.
+ */
+export function buildTripWindow(data: BookingData): {
+  startDate?: string;
+  endDate?: string;
+} {
+  const effectiveDropoffTime =
+    data.dropoffTime || data.pickupTime || "10:00 AM";
+  return {
+    startDate:
+      data.pickupDate && data.pickupTime
+        ? buildDateTime(data.pickupDate, data.pickupTime)
+        : undefined,
+    endDate: data.dropoffDate
+      ? buildDateTime(data.dropoffDate, effectiveDropoffTime)
+      : undefined,
+  };
+}
+
 // ─── Response types for booking creation ──────────────────────────────────
 
 export type BookingResult = {
