@@ -35,8 +35,24 @@ export type SameDayStatus = {
   message: string;
 };
 
-export function getSameDayStatus(regionId: string) {
-  return apiFetch<SameDayStatus>(`/regions/${regionId}/same-day-status`, {
-    method: "GET",
-  });
+/**
+ * Live same-day availability for a region.
+ *
+ * Pass the intended trip `window` (ISO-UTC pickup/dropoff) so the backend
+ * measures Committed Load against that exact window — drivers whose existing
+ * trips don't overlap the requested slot then count as available. Omit it to
+ * fall back to the rolling next-24h window.
+ */
+export function getSameDayStatus(
+  regionId: string,
+  window?: { startDate?: string; endDate?: string },
+) {
+  const qs = new URLSearchParams();
+  if (window?.startDate) qs.set("startDate", window.startDate);
+  if (window?.endDate) qs.set("endDate", window.endDate);
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return apiFetch<SameDayStatus>(
+    `/regions/${regionId}/same-day-status${suffix}`,
+    { method: "GET" },
+  );
 }

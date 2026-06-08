@@ -46,11 +46,18 @@ export type SameDayAvailability = {
   blocked: boolean;
 };
 
-/** A resolved lookup, tagged with the region it belongs to. */
-type Resolved = { regionId: string; status: SameDayStatus | null };
+/** The intended trip window (ISO-UTC), forwarded to the availability lookup. */
+type TripWindow = { startDate?: string; endDate?: string };
+
+/** A resolved lookup, tagged with the exact query (region + window) it answers. */
+type Resolved = { key: string; status: SameDayStatus | null };
 
 /**
  * Resolve live same-day availability for the chosen region + pickup.
+ *
+ * Pass the intended trip `window` so Committed Load is measured against that
+ * exact slot — drivers whose existing trips don't overlap the requested window
+ * still count as available (matching the backend submit gate).
  *
  * Only calls the API when the pickup is actually same-day; otherwise it stays
  * idle. Fails open — a failed lookup never blocks booking, since the backend
@@ -60,27 +67,33 @@ export function useSameDayAvailability(
   regionId: string | undefined,
   pickupDate: Date | undefined,
   pickupTime: string | undefined,
+  window?: TripWindow,
 ): SameDayAvailability {
-  // Result is tagged with its region so a stale value is never trusted.
+  // Result is tagged with its query key so a stale value (different region OR
+  // window) is never trusted.
   const [resolved, setResolved] = useState<Resolved | null>(null);
 
   const isSameDay = isSameDayPickup(pickupDate, pickupTime);
   const applicable = !!regionId && isSameDay;
+
+  const startDate = window?.startDate;
+  const endDate = window?.endDate;
+  const key = `${regionId ?? ""}|${startDate ?? ""}|${endDate ?? ""}`;
 
   useEffect(() => {
     if (!applicable || !regionId) return;
 
     let cancelled = false;
 
-    // Small debounce — region/date can change in quick succession.
+    // Small debounce — region/date/window can change in quick succession.
     const timer = setTimeout(() => {
-      getSameDayStatus(regionId)
+      getSameDayStatus(regionId, { startDate, endDate })
         .then((res) => {
-          if (!cancelled) setResolved({ regionId, status: res.data ?? null });
+          if (!cancelled) setResolved({ key, status: res.data ?? null });
         })
         .catch(() => {
           // Fail open — record a null status so we stop showing "loading".
-          if (!cancelled) setResolved({ regionId, status: null });
+          if (!cancelled) setResolved({ key, status: null });
         });
     }, 400);
 
@@ -88,11 +101,11 @@ export function useSameDayAvailability(
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [applicable, regionId]);
+  }, [applicable, regionId, startDate, endDate, key]);
 
-  // Everything below is derived — a stale `resolved` from another region is
+  // Everything below is derived — a stale `resolved` from another query is
   // simply ignored, so the effect never needs a synchronous state reset.
-  const fresh = applicable && resolved?.regionId === regionId;
+  const fresh = applicable && resolved?.key === key;
   const status = fresh ? resolved!.status : null;
   const loading = applicable && !fresh;
   const blocked = applicable && !!status && !status.available;

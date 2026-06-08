@@ -8,7 +8,7 @@ import { EMPTY_BOOKING, type BookingData } from "./booking-types";
 import { StepTrip } from "./step-trip";
 import { StepRoute } from "./step-route";
 import { StepConfirm } from "./step-confirm";
-import { calculateBookingPrice, startBooking, type BookingPriceResult } from "@/lib/api/bookings";
+import { buildTripWindow, calculateBookingPrice, startBooking, type BookingPriceResult } from "@/lib/api/bookings";
 import { fetchAddons, type ApiAddon } from "@/lib/api/addons";
 import { getVehicleTypes, type VehicleType } from "@/lib/api/vehicle-types";
 import { getRegions, type Region } from "@/lib/api/regions";
@@ -374,7 +374,12 @@ export function BookingWizard({ onStepChange, renderIndicator }: { onStepChange?
 
     // Live same-day availability for the chosen region + pickup. Drives the
     // styled SameDayNotice and gates Continue / Confirm before submission.
-    const sameDay = useSameDayAvailability(data.regionId, data.pickupDate, data.pickupTime);
+    const sameDay = useSameDayAvailability(
+        data.regionId,
+        data.pickupDate,
+        data.pickupTime,
+        buildTripWindow(data),
+    );
 
     // Detect membership — members are exempt from the 3-hour minimum
     useEffect(() => {
