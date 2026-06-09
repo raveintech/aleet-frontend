@@ -77,18 +77,24 @@ function buildDateTime(date: Date, timeStr: string): string {
   const h = parsed.isValid() ? parsed.hours() : 0;
   const min = parsed.isValid() ? parsed.minutes() : 0;
 
-  // Build as UTC to avoid local timezone shifting the date
-  return moment
-    .utc({
-      year: date.getFullYear(),
-      month: date.getMonth(),
-      date: date.getDate(),
-      hour: h,
-      minute: min,
-      second: 0,
-      millisecond: 0,
-    })
-    .toISOString();
+  // Combine the picked date + time in the BROWSER'S LOCAL TZ, then convert
+  // to UTC via toISOString(). Standard pattern: user picks wall-clock time
+  // in their TZ → stored as the correct UTC instant → each viewer renders
+  // it in their own local TZ via toLocaleString().
+  //
+  // The previous moment.utc({...}) construction treated the typed numbers
+  // as already-UTC, which dropped the user's TZ offset entirely — caused
+  // "Start date must be in future" errors for users west of UTC and
+  // silent time drift for everyone not in UTC.
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    h,
+    min,
+    0,
+    0,
+  ).toISOString();
 }
 
 function serializeBookingData(data: BookingData) {
